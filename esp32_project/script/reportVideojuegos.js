@@ -44,10 +44,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     const reportRow = document.createElement("tr");
                     reportRow.innerHTML = `
                         <td>${reportDate.toLocaleString()}</td>
-                        <td>${report.dato1 ?? 'N/A'}</td>
                         <td>${report.dato2 ?? 'N/A'}</td>
-                        <td>${report.dato3 ?? 'N/A'}</td>
-                        <td>${report.dato4 ?? 'N/A'}</td>
                     `;
                     tableBody.appendChild(reportRow);
                 });
@@ -78,7 +75,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
     }
 
-    fetch(`http://localhost/esp32_project/get_closes.php?device_id=${deviceId}`)
+    fetch(`/esp32_project/get_closes.php?device_id=${deviceId}`)
 
         .then(response => {
             if (!response.ok) {
@@ -89,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .then(data => {
             if (data.reports && Array.isArray(data.reports)) {
                 calcularCierresDiarios(data.reports);
-                cargarTabla('tabla-diarios', datosDiarios, ['fecha', 'pesos', 'coin', 'premios', 'banco']);
+                cargarTabla('tabla-diarios', datosDiarios, ['fecha', 'coin']);
             } else {
                 console.warn('No se recibieron reportes válidos.');
             }
@@ -101,50 +98,21 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // Función para calcular cierres diarios sin filtrar, para mostrar todos los días
 function calcularCierresDiarios(reports) {
-    const cierresPorDia = {}; // Objeto para almacenar los cierres por día
+    const cierresPorDia = {};
 
-    // Agrupar los reportes por fecha
     reports.forEach(report => {
-        const fecha = report.timestamp.split(" ")[0]; // Extraer solo la fecha (YYYY-MM-DD)
+        const fecha = report.timestamp.split(" ")[0];
 
-        // Si no existe un cierre para el día, inicializamos con el primer reporte
         if (!cierresPorDia[fecha]) {
-            cierresPorDia[fecha] = [];
+            cierresPorDia[fecha] = { fecha, coin: 0};
         }
-
-        // Agregar el reporte a la lista del día correspondiente
-        cierresPorDia[fecha].push(report);
+        cierresPorDia[fecha].coin += report.dato2;
     });
 
-    // Convertir cierresPorDia en un array y procesar cada día
-    datosDiarios = Object.entries(cierresPorDia).map(([fecha, reportesDelDia]) => {
-        // Si hay un único reporte, tomarlo directamente
-        if (reportesDelDia.length === 1) {
-            const unicoReporte = reportesDelDia[0];
-            return {
-                fecha,
-                pesos: unicoReporte.dato1, // Mostrar tal cual
-                coin: unicoReporte.dato2,  // Mostrar tal cual
-                premios: unicoReporte.dato3, // Mostrar tal cual
-                banco: unicoReporte.dato4  // Mostrar tal cual
-            };
-        } else {
-            // Caso general: calcular las diferencias para coin y premios
-            const primerReporte = reportesDelDia[0];
-            const ultimoReporte = reportesDelDia[reportesDelDia.length - 1];
-
-            return {
-                fecha,
-                pesos: primerReporte.dato1, // Mostrar tal cual
-                coin: primerReporte.dato2 - ultimoReporte.dato2, // Diferencia de coin
-                premios: primerReporte.dato3 - ultimoReporte.dato3, // Diferencia de premios
-                banco: primerReporte.dato4 // Mostrar tal cual
-            };
-        }
-    });
-
+    datosDiarios = Object.values(cierresPorDia);
     console.log("Cierres Diarios (agrupados por fecha):", datosDiarios);
 }
+
 
 function calcularCierreSemanalDesdeFecha(fechaInicio) {
     datosSemanales = []; // Reiniciar los datos semanales
@@ -154,6 +122,7 @@ function calcularCierreSemanalDesdeFecha(fechaInicio) {
     let fecha = new Date(fechaInicio);
     fecha.setHours(0, 0, 0, 0); // Asegurarse de que esté ajustado a medianoche
 
+    // Mientras la fecha esté dentro del rango de los datos
     while (fecha <= new Date(datosDiarios[datosDiarios.length - 1].fecha) || datosSemanales.length === 0) {
         const semana = []; // Arreglo para la semana actual
 
@@ -170,37 +139,27 @@ function calcularCierreSemanalDesdeFecha(fechaInicio) {
                 // Día sin datos, agregar valores en 0
                 semana.push({
                     fecha: fechaStr,
-                    pesos: 0,
                     coin: 0,
-                    premios: 0,
-                    banco: 0
                 });
             }
         }
 
-        // Controlar si la semana tiene datos válidos
-        const semanaValida = semana.filter(dia => dia.pesos !== 0 || dia.coin !== 0 || dia.premios !== 0 || dia.banco !== 0);
-        if (semanaValida.length > 0) {
-            // Generar el total de la semana sumando todas las posiciones
-            const totalSemana = semana.reduce((acumulador, dia) => {
-                acumulador.pesos = dia.pesos; // Tomar directamente de cada día (último día)
-                acumulador.coin += dia.coin; // Sumar todos los valores de coin
-                acumulador.premios += dia.premios; // Sumar todos los valores de premios
-                acumulador.banco = dia.banco; // Tomar directamente de cada día (último día)
-                return acumulador;
-            }, { fecha: `Semana del ${fecha.toLocaleDateString()}`, pesos: 0, coin: 0, premios: 0, banco: 0 });
+        // Sumar los valores de la semana actual
+        const totalSemana = semana.reduce((acc, dia) => {
+            acc.coin += dia.coin;
+            return acc;
+        }, { fecha: `Semana del ${fecha.toLocaleDateString()}`, coin: 0});
 
-            datosSemanales.push(totalSemana);
-        }
-
-        // Avanzar a la próxima semana
-        fecha = new Date(fecha.getTime() + 7 * 24 * 60 * 60 * 1000);
+        datosSemanales.push(totalSemana);
+        fecha = new Date(fecha.getTime() + 7 * 24 * 60 * 60 * 1000); // Avanzar a la próxima semana
     }
 
     console.log("Cierres Semanales desde la fecha seleccionada:", datosSemanales);
-    cargarTabla('tabla-semanales', datosSemanales, ['fecha', 'pesos', 'coin', 'premios', 'banco']);
+    cargarTabla('tabla-semanales', datosSemanales, ['fecha','coin']);
 }
 
+
+// Función para calcular cierres mensuales basado en el rango de fechas seleccionado
 function calcularCierreMensual(fechaInicio) {
     datosMensuales = []; // Reiniciar datos mensuales
 
@@ -210,37 +169,33 @@ function calcularCierreMensual(fechaInicio) {
 
     console.log(`Calculando cierre mensual para el rango: ${inicioMes.toLocaleDateString()} - ${finMes.toLocaleDateString()}`);
     
-    // Filtrar solo los cierres diarios dentro del mes seleccionado
-    const cierresDelMes = datosDiarios.filter(dia => {
-        const fechaDia = new Date(dia.fecha);
-        return fechaDia >= inicioMes && fechaDia <= finMes;
-    });
+    // Filtrar los días dentro del rango mensual seleccionado
+    const diasDelMes = [];
+    for (let dia = inicioMes; dia <= finMes; dia.setDate(dia.getDate() + 1)) {
+        const fechaStr = dia.toISOString().split('T')[0];
+        
+        // Buscar si existe un cierre diario para el día actual
+        const cierreDiario = datosDiarios.find(d => d.fecha === fechaStr);
 
-    if (cierresDelMes.length === 0) {
-        console.warn('No hay cierres diarios disponibles para este mes.');
-        return;
+        if (cierreDiario) {
+            diasDelMes.push(cierreDiario);
+        } else {
+            // Día sin datos, añadir un objeto con valores en 0
+            diasDelMes.push({
+                fecha: fechaStr,
+                coin: 0,
+            });
+        }
     }
 
-    // Ordenar los cierres diarios del mes en orden ascendente por fecha
-    cierresDelMes.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    // Sumar los valores del mes
+    const totalMes = diasDelMes.reduce((acc, dia) => {
+        acc.coin += dia.coin;
+        return acc;
+    }, { fecha: `${inicioMes.toLocaleDateString()} - ${finMes.toLocaleDateString()}`, coin: 0});
 
-    const primerCierre = cierresDelMes[0]; // Primer día con cierre
-    const ultimoCierre = cierresDelMes[cierresDelMes.length - 1]; // Último día con cierre
-
-    // Calcular cierre mensual correctamente
-    const cierreMensual = {
-        fecha: `${inicioMes.toLocaleDateString()} - ${finMes.toLocaleDateString()}`, // Rango de fechas del mes
-        pesos: ultimoCierre.pesos, // **Pesos del último día**
-        coin: ultimoCierre.coin - primerCierre.coin, // **Diferencia de COIN entre el último y primer día**
-        premios: ultimoCierre.premios - primerCierre.premios, // **Diferencia de PREMIOS entre el último y primer día**
-        banco: ultimoCierre.banco // **Banco del último día**
-    };
-
-    datosMensuales.push(cierreMensual); // Agregar el cierre mensual calculado
+    datosMensuales.push(totalMes); // Agregar el cierre mensual calculado
     console.log("Cierre Mensual calculado:", datosMensuales);
-
-    // Mostrar los datos en la tabla mensual
-    cargarTabla('tabla-mensuales', datosMensuales, ['fecha', 'pesos', 'coin', 'premios', 'banco']);
 }
 
 
@@ -293,7 +248,7 @@ flatpickr("#selector-inicio-mes", {
     onClose: function(selectedDates) {
         if (selectedDates.length === 1) {
             calcularCierreMensual(selectedDates[0]);
-            cargarTabla('tabla-mensuales', datosMensuales, ['fecha', 'pesos', 'coin', 'premios', 'banco']);
+            cargarTabla('tabla-mensuales', datosMensuales, ['fecha', 'coin']);
         }
     }
 });
@@ -381,7 +336,7 @@ function generarGraficaSemanales(datos) {
 function generarGraficaMensuales(datos) {
     const ctx = document.getElementById('grafica-ganancias-mensuales').getContext('2d');
     const etiquetas = datos.map(d => d.fecha); // Fecha mensual
-    const ganancias = datos.map(d => d.pesos); // 'pesos' para ganancias mensuales
+    const ganancias = datos.map(d => d.coin); // 'pesos' para ganancias mensuales
     
     new Chart(ctx, {
         type: 'bar',
@@ -409,8 +364,7 @@ function generarGraficaMensuales(datos) {
 function generarGraficaComparativa(datos) {
     const ctx = document.getElementById('grafica-comparativa').getContext('2d');
     const etiquetas = datos.map(d => d.fecha); // Fecha para la comparativa
-    const ganancias = datos.map(d => d.pesos); // 'pesos' como ganancias
-    const perdidas = datos.map(d => d.perdidas || 0); // 'perdidas', si existe
+    const ganancias = datos.map(d => d.coin); // 'pesos' como ganancias
     
     new Chart(ctx, {
         type: 'line',

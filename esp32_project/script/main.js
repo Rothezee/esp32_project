@@ -19,7 +19,12 @@ document.addEventListener("DOMContentLoaded", function () {
         { deviceId: 'Ticket_2', pesosId: '', coinId: 'coin_maquina_ticket_2', premiosId: '', statusId: 'status_maquina_ticket_2', bancoId: '', ticketId: 'ticket_maquina_ticket_2' },
         { deviceId: 'Ticket_3', pesosId: '', coinId: 'coin_maquina_ticket_3', premiosId: '', statusId: 'status_maquina_ticket_3', bancoId: '', ticketId: 'ticket_maquina_ticket_3' },
         { deviceId: 'Ticket_4', pesosId: '', coinId: 'coin_maquina_ticket_4', premiosId: '', statusId: 'status_maquina_ticket_4', bancoId: '', ticketId: 'ticket_maquina_ticket_4' },
-        { deviceId: 'Ticket_5', pesosId: '', coinId: 'coin_maquina_ticket_5', premiosId: '', statusId: 'status_maquina_ticket_5', bancoId: '', ticketId: 'ticket_maquina_ticket_5' }
+        { deviceId: 'Ticket_5', pesosId: '', coinId: 'coin_maquina_ticket_5', premiosId: '', statusId: 'status_maquina_ticket_5', bancoId: '', ticketId: 'ticket_maquina_ticket_5' },
+        { deviceId: 'EXPENDEDORA_1', pesosId: 'pesos_expendedora_1', coinId: 'coin_expendedora_1', premiosId: 'premios_expendedora_1', statusId: 'status_expendedora_1', bancoId: 'banco_expendedora_1', ticketId: '' },
+        { deviceId: 'EXPENDEDORA_2', pesosId: 'pesos_expendedora_2', coinId: 'coin_expendedora_2', premiosId: 'premios_expendedora_2', statusId: 'status_expendedora_2', bancoId: 'banco_expendedora_2', ticketId: '' },
+        { deviceId: 'EXPENDEDORA_3', pesosId: 'pesos_expendedora_3', coinId: 'coin_expendedora_3', premiosId: 'premios_expendedora_3', statusId: 'status_expendedora_3', bancoId: 'banco_expendedora_3', ticketId: '' },
+        { deviceId: 'EXPENDEDORA_4', pesosId: 'pesos_expendedora_4', coinId: 'coin_expendedora_4', premiosId: 'premios_expendedora_4', statusId: 'status_expendedora_4', bancoId: 'banco_expendedora_4', ticketId: '' },
+        { deviceId: 'EXPENDEDORA_5', pesosId: 'pesos_expendedora_5', coinId: 'coin_expendedora_5', premiosId: 'premios_expendedora_5', statusId: 'status_expendedora_5', bancoId: 'banco_expendedora_5', ticketId: '' }
     ];
 
     devices.forEach(device => {
@@ -39,7 +44,6 @@ function fetchData(deviceId, pesosId, coinId, premiosId, statusId, bancoId, tick
         .then(response => response.json())
         .then(data => {
             if (data.error) {
-                console.error(data.error);
                 setElementText(pesosId, 'N/A');
                 setElementText(coinId, 'N/A');
                 setElementText(premiosId, 'N/A');
@@ -70,9 +74,7 @@ function setElementText(elementId, text) {
     const element = document.getElementById(elementId);
     if (element) {
         element.innerText = text;
-    } else {
-        console.error('Element not found:', elementId);
-    }
+    } 
 }
 
 // Resaltar BANCO si es menor o igual a -10
@@ -97,7 +99,6 @@ function setBancoValue(bancoId, value) {
         console.error('Element or item container not found for:', bancoId);
     }
 }
-
 
 
 function checkStatus(deviceId, elementId) {
