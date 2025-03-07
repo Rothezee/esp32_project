@@ -1,4 +1,6 @@
 <?php
+date_default_timezone_set('America/Argentina/Buenos_Aires');
+
 $servername = "localhost";
 $username = "root";
 $password = "39090169";
@@ -13,20 +15,20 @@ try {
     if (isset($_GET['device_id'])) {
         $device_id = $_GET['device_id'];
 
+        // Actualizar el heartbeat del dispositivo
+        $stmt = $conn->prepare("INSERT INTO devices (device_id, last_heartbeat) VALUES (:device_id, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE last_heartbeat = CURRENT_TIMESTAMP");
+        $stmt->bindParam(':device_id', $device_id, PDO::PARAM_STR);
+        $stmt->execute();
+
         // Obtener el estado de la máquina
-        $stmt = $conn->prepare("SELECT last_heartbeat FROM devices WHERE device_id = device_id");
-        $stmt->bindParam('device_id', $device_id, PDO::PARAM_STR);
+        $stmt = $conn->prepare("SELECT last_heartbeat FROM devices WHERE device_id = :device_id");
+        $stmt->bindParam(':device_id', $device_id, PDO::PARAM_STR);
         $stmt->execute();
         $heartbeat = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($heartbeat) {
             $last_heartbeat = strtotime($heartbeat['last_heartbeat']);
             $current_time = time();
-
-            // Depuración: imprimir los valores de last_heartbeat y current_time
-            error_log("last_heartbeat: " . date('Y-m-d H:i:s', $last_heartbeat));
-            error_log("current_time: " . date('Y-m-d H:i:s', $current_time));
-            error_log("difference: " . ($current_time - $last_heartbeat));
 
             // Evaluar si la última señal fue en los últimos 60 segundos
             $is_online = ($current_time - $last_heartbeat) <= 60;
