@@ -65,7 +65,6 @@ function fetchData(device) {
         .then(data => {
 
             if (data.error) {
-                console.warn(`Error al obtener datos de ${device.deviceId}:`, data.error);
                 updateElementIfExists(device.pesosId, 'N/A');
                 updateElementIfExists(device.coinId, 'N/A');
                 updateElementIfExists(device.premiosId, 'N/A');
@@ -132,8 +131,6 @@ function setBancoValue(bancoId, value) {
 
 function checkStatus(deviceId, statusId) {
     if (!statusId) return; // Si el statusId está vacío, no hacemos nada
-
-    console.log(`Verificando estado para ${deviceId}...`);
 
     fetch('check_status.php?device_id=' + deviceId)
         .then(response => response.json())
