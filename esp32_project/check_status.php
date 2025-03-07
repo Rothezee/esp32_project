@@ -4,9 +4,6 @@ $username = "root";
 $password = "39090169";
 $dbname = "esp32_report";
 
-// Configurar la zona horaria del servidor
-date_default_timezone_set('America/Argentina/Buenos_Aires');
-
 try {
     // Crear una nueva conexión PDO
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
@@ -17,8 +14,8 @@ try {
         $device_id = $_GET['device_id'];
 
         // Obtener el estado de la máquina
-        $stmt = $conn->prepare("SELECT last_heartbeat FROM devices WHERE device_id = :device_id");
-        $stmt->bindParam(':device_id', $device_id, PDO::PARAM_STR);
+        $stmt = $conn->prepare("SELECT last_heartbeat FROM devices WHERE device_id = device_id");
+        $stmt->bindParam('device_id', $device_id, PDO::PARAM_STR);
         $stmt->execute();
         $heartbeat = $stmt->fetch(PDO::FETCH_ASSOC);
 

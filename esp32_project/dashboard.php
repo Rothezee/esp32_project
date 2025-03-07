@@ -152,12 +152,10 @@
         <h2 class="aaa">EXPENDEDORA 1</h2>
         <span id="status_expendedora_1" class="status">Desconectado</span><br><br>
         <div class="machine-stats">
-            <p><strong>PESOS:</strong> <span id="pesos_expendedora_1">N/A</span></p><br>
-            <p><strong>COIN:</strong> <span id="coin_expendedora_1">N/A</span></p><br>
-            <p><strong>PREMIOS:</strong> <span id="premios_expendedora_1">N/A</span></p><br>
-            <p><strong>BANCO:</strong> <span id="banco_expendedora_1">N/A</span></p><br>
+            <p><strong>FICHAS:</strong> <span id="fichas_expendedora_1">N/A</span></p><br>
+            <p><strong>DINERO:</strong> <span id="dinero_expendedora_1">N/A</span></p><br>
         </div>
-        <button onclick="window.location.href='report.php?device_id=EXPENDEDORA_1'">Ver Reporte</button>
+        <button onclick="window.location.href='report_expendedora.php?device_id=EXPENDEDORA_1'">Ver Reporte</button>
     </div>
     
     <!-- Sección para otras máquinas expendedoras -->
@@ -165,47 +163,39 @@
         <h2 class="aaa">EXPENDEDORA 2</h2>
         <span id="status_expendedora_2" class="status">Desconectado</span><br><br>
         <div class="machine-stats">
-            <p><strong>PESOS:</strong> <span id="pesos_expendedora_2">N/A</span></p><br>
-            <p><strong>COIN:</strong> <span id="coin_expendedora_2">N/A</span></p><br>
-            <p><strong>PREMIOS:</strong> <span id="premios_expendedora_2">N/A</span></p><br>
-            <p><strong>BANCO:</strong> <span id="banco_expendedora_2">N/A</span></p><br>
+            <p><strong>FICHAS:</strong> <span id="fichas_expendedora_2">N/A</span></p><br>
+            <p><strong>DINERO:</strong> <span id="dinero_expendedora_2">N/A</span></p><br>
         </div>
-        <button onclick="window.location.href='report.php?device_id=EXPENDEDORA_2'">Ver Reporte</button>
+        <button onclick="window.location.href='report_expendedora.php?device_id=EXPENDEDORA_2'">Ver Reporte</button>
     </div>
     
     <div class="item">
         <h2 class="aaa">EXPENDEDORA 3</h2>
         <span id="status_expendedora_3" class="status">Desconectado</span><br><br>
         <div class="machine-stats">
-            <p><strong>PESOS:</strong> <span id="pesos_expendedora_3">N/A</span></p><br>
-            <p><strong>COIN:</strong> <span id="coin_expendedora_3">N/A</span></p><br>
-            <p><strong>PREMIOS:</strong> <span id="premios_expendedora_3">N/A</span></p><br>
-            <p><strong>BANCO:</strong> <span id="banco_expendedora_3">N/A</span></p><br>
+            <p><strong>FICHAS:</strong> <span id="fichas_expendedora_3">N/A</span></p><br>
+            <p><strong>DINERO:</strong> <span id="dinero_expendedora_3">N/A</span></p><br>
         </div>
-        <button onclick="window.location.href='report.php?device_id=EXPENDEDORA_3'">Ver Reporte</button>
+        <button onclick="window.location.href='report_expendedora.php?device_id=EXPENDEDORA_3'">Ver Reporte</button>
     </div>
 
     <div class="item">
         <h2 class="aaa">EXPENDEDORA 4</h2>
         <span id="status_expendedora_4" class="status">Desconectado</span><br><br>
         <div class="machine-stats">
-            <p><strong>PESOS:</strong> <span id="pesos_expendedora_4">N/A</span></p><br>
-            <p><strong>COIN:</strong> <span id="coin_expendedora_4">N/A</span></p><br>
-            <p><strong>PREMIOS:</strong> <span id="premios_expendedora_4">N/A</span></p><br>
-            <p><strong>BANCO:</strong> <span id="banco_expendedora_4">N/A</span></p><br>
+            <p><strong>FICHAS:</strong> <span id="fichas_expendedora_4">N/A</span></p><br>
+            <p><strong>DINERO:</strong> <span id="dinero_expendedora_4">N/A</span></p><br>
         </div>
-        <button onclick="window.location.href='report.php?device_id=EXPENDEDORA_4'">Ver Reporte</button>
+        <button onclick="window.location.href='report_expendedora.php?device_id=EXPENDEDORA_4'">Ver Reporte</button>
     </div>
     <div class="item">
     <h2 class="aaa">EXPENDEDORA 5</h2>
     <span id="status_expendedora_5" class="status">Desconectado</span><br><br>
     <div class="machine-stats">
-        <p><strong>PESOS:</strong> <span id="pesos_expendedora_5">N/A</span></p><br>
-        <p><strong>COIN:</strong> <span id="coin_expendedora_5">N/A</span></p><br>
-        <p><strong>PREMIOS:</strong> <span id="premios_expendedora_5">N/A</span></p><br>
-        <p><strong>BANCO:</strong> <span id="banco_expendedora_5">N/A</span></p><br>
+        <p><strong>FICHAS:</strong> <span id="fichas_expendedora_5">N/A</span></p><br>
+        <p><strong>DINERO:</strong> <span id="dinero_expendedora_5">N/A</span></p><br>
     </div>
-    <button onclick="window.location.href='report.php?device_id=EXPENDEDORA_5'">Ver Reporte</button>
+    <button onclick="window.location.href='report_expendedora.php?device_id=EXPENDEDORA_5'">Ver Reporte</button>
 </div>
 
 </div>
