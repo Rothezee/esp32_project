@@ -1,22 +1,7 @@
 <?php
 header('Content-Type: application/json');
 
-$servername = "localhost";
-$username = "root";
-$password = "39090169";
-$dbname = "esp32_report";
-
-// Conectar a la base de datos
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die(json_encode(["error" => "Connection failed: " . $conn->connect_error]));
-}
-
-// Verificar si `device_id` está en la solicitud
-if (!isset($_GET['device_id'])) {
-    die(json_encode(["error" => "device_id is required"]));
-}
-
+include 'conn/connection.php';
 $device_id = $conn->real_escape_string($_GET['device_id']);
 
 // Consulta para obtener los reportes

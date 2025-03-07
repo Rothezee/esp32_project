@@ -1,26 +1,5 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-// Crear un archivo de registro de errores
-$log_file = 'error_log.txt';
-ini_set('log_errors', 1);
-ini_set('error_log', $log_file);
-
-$servername = "localhost";
-$username = "root";
-$password = "39090169";
-$dbname = "esp32_report";
-
-// Crear conexión
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Verificar conexión
-if ($conn->connect_error) {
-    error_log("Connection failed: " . $conn->connect_error);
-    die("Connection failed: " . $conn->connect_error);
-}
+include 'conn/connection.php';
 
 // Obtener los datos POST
 $data = json_decode(file_get_contents('php://input'), true);

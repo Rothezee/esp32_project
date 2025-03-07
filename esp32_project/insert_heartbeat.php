@@ -3,19 +3,7 @@
 date_default_timezone_set('America/Argentina/Buenos_Aires');
 header('Content-Type: application/json');
 
-// Configurar la conexión a la base de datos
-$servername = "localhost";
-$username = "root";  // Cambia esto por tu nombre de usuario de la base de datos
-$password = "39090169";  // Cambia esto por tu contraseña de la base de datos
-$dbname = "esp32_report";  // Nombre de la base de datos
-
-// Conectar a la base de datos
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Verificar si la conexión falló
-if ($conn->connect_error) {
-    die(json_encode(["error" => "Connection failed: " . $conn->connect_error]));
-}
+include 'conn/connection.php';
 
 // Obtener los datos POST enviados en formato JSON
 $data = json_decode(file_get_contents('php://input'), true);
