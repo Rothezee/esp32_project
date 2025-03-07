@@ -28,25 +28,6 @@ document.addEventListener("DOMContentLoaded", function () {
     ];
 
     devices.forEach(device => {
-        fetchData(device.deviceId, device.pesosId, device.coinId, device.premiosId, device.statusId, device.bancoId, device.ticketId);
-    });
-
-    // Actualizar el estado y los datos cada minuto
-    setInterval(() => {
-        devices.forEach(device => {
-            fetchData(device.deviceId, device.pesosId, device.coinId, device.premiosId, device.statusId, device.bancoId, device.ticketId);
-        });
-    }, 60000);
-});
-
-document.addEventListener("DOMContentLoaded", function () {
-    const devices = [
-        { deviceId: 'ESP32_001', pesosId: 'pesos_maquina_1', coinId: 'coin_maquina_1', premiosId: 'premios_maquina_1', statusId: 'status_maquina_1', bancoId: 'banco_maquina_1', ticketId: '' },
-        { deviceId: 'ESP32_002', pesosId: 'pesos_maquina_2', coinId: 'coin_maquina_2', premiosId: 'premios_maquina_2', statusId: 'status_maquina_2', bancoId: 'banco_maquina_2', ticketId: '' },
-        // Añadir más dispositivos según sea necesario...
-    ];
-
-    devices.forEach(device => {
         fetchData(device);
     });
 
@@ -59,12 +40,15 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function fetchData(device) {
+    console.log(`Solicitando datos para ${device.deviceId}...`);
 
     fetch('get_data.php?device_id=' + device.deviceId)
         .then(response => response.json())
         .then(data => {
+            console.log(`Datos recibidos para ${device.deviceId}:`, data);
 
             if (data.error) {
+                console.warn(`Error al obtener datos de ${device.deviceId}:`, data.error);
                 updateElementIfExists(device.pesosId, 'N/A');
                 updateElementIfExists(device.coinId, 'N/A');
                 updateElementIfExists(device.premiosId, 'N/A');
@@ -76,7 +60,6 @@ function fetchData(device) {
                 updateElementIfExists(device.coinId, data.dato2 || 'N/A');
                 updateElementIfExists(device.premiosId, data.dato3 || 'N/A');
                 updateElementIfExists(device.ticketId, data.dato5 || 'N/A');
-                updateElementIfExists(device.statusId, data.status === 'online' ? 'Conectado' : 'Desconectado');
 
                 if (device.bancoId) {
                     setBancoValue(device.bancoId, data.dato4 || 'N/A');
@@ -132,19 +115,24 @@ function setBancoValue(bancoId, value) {
 function checkStatus(deviceId, statusId) {
     if (!statusId) return; // Si el statusId está vacío, no hacemos nada
 
+    console.log(`Verificando estado para ${deviceId}...`);
+
     fetch('check_status.php?device_id=' + deviceId)
         .then(response => response.json())
         .then(data => {
+            console.log(`Estado recibido para ${deviceId}:`, data);
 
             if (data.error) {
                 console.error(`Error al obtener estado de ${deviceId}:`, data.error);
                 updateElementIfExists(statusId, 'Desconectado');
             } else {
                 const statusText = data.status === 'online' ? 'Conectado' : 'Desconectado';
+                console.log(`Actualizando estado de ${deviceId} a ${statusText}`);
                 updateElementIfExists(statusId, statusText);
             }
         })
         .catch(error => {
+            console.error(`Error en fetch para estado de ${deviceId}:`, error);
             updateElementIfExists(statusId, 'Desconectado');
         });
 }
