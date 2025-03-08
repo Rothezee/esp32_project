@@ -1,4 +1,9 @@
 <?php
+// Habilitar informes de errores
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 include('config.php');
 session_start();
 
@@ -6,26 +11,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST['username'];
     $password = $_POST['password'];
     
-    $stmt = $conn->prepare("SELECT id, password FROM users WHERE username = ?");
-    $stmt->bind_param("s", $username);
+    // Preparar la consulta utilizando PDO
+    $stmt = $conn->prepare("SELECT id, password FROM users WHERE username = :username");
+    $stmt->bindValue(':username', $username);
     $stmt->execute();
-    $stmt->store_result();
     
-    if ($stmt->num_rows > 0) {
-        $stmt->bind_result($id, $hashed_password);
-        $stmt->fetch();
+    if ($stmt->rowCount() > 0) {
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $hashed_password = $user['password'];
         
         if (password_verify($password, $hashed_password)) {
             $_SESSION['username'] = $username;
             header("Location: dashboard.php");
+            exit();
         } else {
             echo "Invalid credentials";
         }
     } else {
         echo "No user found";
     }
-    
-    $stmt->close();
 }
 ?>
 
