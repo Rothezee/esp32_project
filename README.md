@@ -3,7 +3,7 @@
 <div align="center"> <img src="https://visitor-badge.laobi.icu/badge?page_id=Rothezee.esp32_project" /> </div>
 <h1 align="center">Hola 👋</h1>
 <h3 align="left">👩‍💻 Acerca de mí</h3>
-<p align="left">Soy ... de ....<br><br>- 🔭 Estoy trabajando en ...<br>- 📚 Actualmente estoy aprendiendo ...<br>- ⚡ En mi tiempo libre ...</p>
+<p align="left">Soy Alan de Argentina<br><br>- 🔭 Estoy trabajando en una pagina web<br>- 📚 Actualmente estoy aprendiendo gestion de proyectos<br>- ⚡ En mi tiempo libre suelo leer y hacer ajercicio</p>
 <h3 align="left">🛠 Lenguajes y herramientas</h3>
 <div align="left"> <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" height="40" alt="javascript logo" /> <img width="12" /> <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg" height="40" alt="php logo" /> <img width="12" /> <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/hack/hack-original.svg" height="40" alt="hack logo" /> <img width="12" /> <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg" height="40" alt="html logo" /> <img width="12" /> <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg" height="40" alt="css logo" /> </div>
 <h3 align="left">🔥 Mis estadísticas:</h3>
