@@ -18,21 +18,21 @@ if ($conn->connect_error) {
 }
 
 // Verificar si se ha proporcionado un device_id
-if (!isset($_GET['device_id'])) {
+if (!isset($_GET['id_expendedora'])) {
     header('Content-Type: application/json');
-    die(json_encode(["error" => "device_id no proporcionado."]));
+    die(json_encode(["error" => "id_expendedora no proporcionado."]));
 }
 
-$device_id = $_GET['device_id'];
+$id_expendedora = $_GET['id_expendedora'];
 
-// Consulta para obtener los datos de la máquina de tickets
-$sql = "SELECT id, device_id, dato1, dato2, timestamp FROM datos WHERE device_id = ?";
+// Consulta para obtener los datos de la expendedora
+$sql = "SELECT id_expendedora, fichas, dinero, p1, p2, p3, timestamp FROM cierres_expendedoras WHERE id_expendedora = ?";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     header('Content-Type: application/json');
     die(json_encode(["error" => "Prepare failed: " . $conn->error]));
 }
-$stmt->bind_param("s", $device_id);
+$stmt->bind_param("s", $id_expendedora);
 $stmt->execute();
 $result = $stmt->get_result();
 
