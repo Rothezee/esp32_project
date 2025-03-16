@@ -26,14 +26,14 @@ if ($conn->connect_error) {
 $data = json_decode(file_get_contents('php://input'), true);
 
 // Verificar que se hayan recibido todos los datos necesarios
-if (!isset($data['id_expendedora']) || !isset($data['fichas']) || !isset($data['dinero']) || !isset($data['p1']) || !isset($data['p2']) || !isset($data['p3'])) {
+if (!isset($data['device_id']) || !isset($data['fichas']) || !isset($data['dinero']) || !isset($data['p1']) || !isset($data['p2']) || !isset($data['p3'])) {
     error_log("Missing data");
     echo json_encode(["error" => "Missing data"]);
     $conn->close();
     exit();
 }
 
-$id_expendedora = $data['id_expendedora'];
+$id_expendedora = $data['device_id'];
 $fichas = $data['fichas'];
 $dinero = $data['dinero'];
 $p1 = $data['p1'];
@@ -63,6 +63,7 @@ if ($stmt->execute()) {
     }
     $update_stmt->bind_param("s", $id_expendedora);
     $update_stmt->execute();
+    $update_stmt->close();
 
     echo json_encode(["success" => "Data inserted successfully"]);
 } else {
