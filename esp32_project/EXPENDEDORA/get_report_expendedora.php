@@ -26,7 +26,7 @@ if (!isset($_GET['device_id'])) {
 $device_id = $_GET['device_id'];
 
 // Consulta para obtener los datos de la máquina de tickets
-$sql = "SELECT id, device_id, dato2, dato5, timestamp FROM datos WHERE device_id = ?";
+$sql = "SELECT id, device_id, dato1, dato2, timestamp FROM datos WHERE device_id = ?";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     header('Content-Type: application/json');
@@ -41,10 +41,8 @@ while ($row = $result->fetch_assoc()) {
     $reports[] = $row;
 }
 
-
 $response = [
-    "reports" => $reports,
-    "closes" => $closes
+    "reports" => $reports
 ];
 
 header('Content-Type: application/json');
