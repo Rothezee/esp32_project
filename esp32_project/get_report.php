@@ -1,12 +1,22 @@
 <?php
 header('Content-Type: application/json');
-
+// Configurar la zona horaria del servidor
+date_default_timezone_set('America/Argentina/Buenos_Aires');
 include 'conn/connection.php';
 
 $device_id = $conn->real_escape_string($_GET['device_id']);
+$fechaInicio = isset($_GET['fechaInicio']) ? $conn->real_escape_string($_GET['fechaInicio']) : null;
+$fechaFin = isset($_GET['fechaFin']) ? $conn->real_escape_string($_GET['fechaFin']) : null;
 
-// Retrieve reports
-$sql = "SELECT id, timestamp, dato1, dato2, dato3, dato4 FROM datos WHERE device_id = '$device_id' ORDER BY timestamp DESC";
+// Construir la consulta SQL para obtener los reportes
+$sql = "SELECT id, timestamp, dato1, dato2, dato3, dato4 FROM datos WHERE device_id = '$device_id'";
+
+if ($fechaInicio && $fechaFin) {
+    $sql .= " AND timestamp BETWEEN '$fechaInicio' AND '$fechaFin'";
+}
+
+$sql .= " ORDER BY timestamp DESC";
+
 $result = $conn->query($sql);
 
 if (!$result) {
@@ -16,7 +26,7 @@ if (!$result) {
 $reports = [];
 
 if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
+    while ($row = $result->fetch_assoc()) {
         $reports[] = $row;
     }
 }
@@ -32,7 +42,7 @@ if (!$result_closes) {
 $closes = [];
 
 if ($result_closes->num_rows > 0) {
-    while($row = $result_closes->fetch_assoc()) {
+    while ($row = $result_closes->fetch_assoc()) {
         $closes[] = $row['close_date'];
     }
 }
