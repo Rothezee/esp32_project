@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <title>Information to Machine</title>
 </head>
@@ -21,7 +21,7 @@
                 </div>
                 <div class="navbar-menu" id="open-navbar1">
                     <ul class="navbar-nav">
-                        <li class="active"><a href="dashboard.php">Home</a></li> 
+                        <li class="active"><a href="../dashboard.php">Home</a></li> 
                         <li><a href="#reportes" onclick="mostrarSeccion('reportes')">Reportes</a></li>
                         <li><a href="#diarios" onclick="mostrarSeccion('diarios')">Cierres Diarios</a></li>
                         <li><a href="#semanales" onclick="mostrarSeccion('semanales')">Cierres Semanales</a></li>
@@ -39,7 +39,7 @@
         <table id="report_table">
             <thead>
                 <tr>
-                    <th>Expendedora</th>
+                    <th>Fecha y hora</th>
                     <th>Fichas</th>
                     <th>Dinero</th>
                 </tr>
@@ -138,8 +138,8 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="script/main.js"></script>
-<script src="script/reportExpendedora.js"></script>
-<script src="script/navbar.js"></script>
+<script src="../script/main.js"></script>
+<script src="../script/reportExpendedora.js"></script>
+<script src="../script/navbar.js"></script>
 </body>
 </html>
