@@ -54,11 +54,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     `;
                     tableBody.appendChild(reportRow);
                 });
+
+                calcularCierresDiarios(reports);
+                cargarTabla('tabla-diarios', datosDiarios, ['fecha', 'pesos', 'coin', 'premios', 'banco']);
             }
         })
         .catch(error => console.error('Error al obtener los datos:', error));
 
-    // Obtener cierres semanales
+    // Inicializar el selector de inicio de semana
     flatpickr("#selector-inicio-semana", {
         dateFormat: "Y-m-d",
         onClose: function(selectedDates) {
@@ -68,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // Obtener cierres mensuales
+    // Inicializar el selector de inicio de mes
     flatpickr("#selector-inicio-mes", {
         dateFormat: "Y-m",
         altInput: true,
@@ -83,7 +86,6 @@ document.addEventListener("DOMContentLoaded", function () {
         onClose: function(selectedDates) {
             if (selectedDates.length === 1) {
                 calcularCierreMensual(selectedDates[0], deviceId);
-                cargarTabla('tabla-mensuales', datosMensuales, ['fecha', 'pesos', 'coin', 'premios', 'banco']);
             }
         }
     });
@@ -110,10 +112,10 @@ function calcularCierresDiarios(reports) {
             const unicoReporte = reportesDelDia[0];
             return {
                 fecha,
-                pesos: unicoReporte.dato1,
-                coin: unicoReporte.dato2,
-                premios: unicoReporte.dato3,
-                banco: unicoReporte.dato4
+                pesos: unicoReporte.dato1 ?? 0,
+                coin: unicoReporte.dato2 ?? 0,
+                premios: unicoReporte.dato3 ?? 0,
+                banco: unicoReporte.dato4 ?? 0
             };
         } else {
             const primerReporte = reportesDelDia[0];
@@ -123,10 +125,10 @@ function calcularCierresDiarios(reports) {
 
             return {
                 fecha,
-                pesos: primerReporte.dato1,
-                coin: ultimoReporte.dato2 - primerReporte.dato2,
-                premios: ultimoReporte.dato3 - primerReporte.dato3,
-                banco: primerReporte.dato4
+                pesos: primerReporte.dato1 ?? 0,
+                coin: (ultimoReporte.dato2 ?? 0) - (primerReporte.dato2 ?? 0),
+                premios: (ultimoReporte.dato3 ?? 0) - (primerReporte.dato3 ?? 0),
+                banco: primerReporte.dato4 ?? 0
             };
         }
     });
@@ -146,8 +148,13 @@ function calcularCierreSemanalDesdeFecha(fechaInicio, deviceId) {
     fetch(`/esp32_project/get_report.php?device_id=${deviceId}&fechaInicio=${fechaInicio.toISOString().split('T')[0]}&fechaFin=${fechaFin.toISOString().split('T')[0]}`)
         .then(response => response.json())
         .then(data => {
-            if (!data || data.error) {
+            if (!data || data.error || !Array.isArray(data.reports)) {
                 console.error("Error en los datos de la base de datos:", data.error);
+                return;
+            }
+
+            if (data.reports.length === 0) {
+                console.warn("No se encontraron reportes para el rango de fechas especificado.");
                 return;
             }
 
@@ -158,10 +165,10 @@ function calcularCierreSemanalDesdeFecha(fechaInicio, deviceId) {
                 const unicoReporte = data.reports[0];
                 cierreSemanal = {
                     fecha: `Semana del ${fechaInicio.toLocaleDateString()}`,
-                    pesos: unicoReporte.dato1,
-                    coin: unicoReporte.dato2,
-                    premios: unicoReporte.dato3,
-                    banco: unicoReporte.dato4
+                    pesos: unicoReporte.dato1 ?? 0,
+                    coin: unicoReporte.dato2 ?? 0,
+                    premios: unicoReporte.dato3 ?? 0,
+                    banco: unicoReporte.dato4 ?? 0
                 };
             } else {
                 // Ordenar reportes por fecha ascendente
@@ -174,10 +181,10 @@ function calcularCierreSemanalDesdeFecha(fechaInicio, deviceId) {
                 console.log("Primer reporte de la semana:", primerReporte);
                 console.log("Último reporte de la semana:", ultimoReporte);
 
-                const pesos = Number(ultimoReporte.dato1);
-                const coin = Number(ultimoReporte.dato2) - Number(primerReporte.dato2);
-                const premios = Number(ultimoReporte.dato3) - Number(primerReporte.dato3);
-                const banco = Number(ultimoReporte.dato4);
+                const pesos = Number(ultimoReporte.dato1 ?? 0);
+                const coin = Number(ultimoReporte.dato2 ?? 0) - Number(primerReporte.dato2 ?? 0);
+                const premios = Number(ultimoReporte.dato3 ?? 0) - Number(primerReporte.dato3 ?? 0);
+                const banco = Number(ultimoReporte.dato4 ?? 0);
 
                 console.log(`Pesos calculados: ${pesos}`);
                 console.log(`Coin calculado: ${coin}`);
@@ -211,8 +218,13 @@ function calcularCierreMensual(fechaInicio, deviceId) {
     fetch(`/esp32_project/get_report.php?device_id=${deviceId}&fechaInicio=${inicioMes.toISOString().split('T')[0]}&fechaFin=${finMes.toISOString().split('T')[0]}`)
         .then(response => response.json())
         .then(data => {
-            if (!data || data.error) {
+            if (!data || data.error || !Array.isArray(data.reports)) {
                 console.error("Error en los datos de la base de datos:", data.error);
+                return;
+            }
+
+            if (data.reports.length === 0) {
+                console.warn("No se encontraron reportes para el rango de fechas especificado.");
                 return;
             }
 
@@ -223,10 +235,10 @@ function calcularCierreMensual(fechaInicio, deviceId) {
                 const unicoReporte = data.reports[0];
                 cierreMensual = {
                     fecha: `${inicioMes.toLocaleDateString()} - ${finMes.toLocaleDateString()}`,
-                    pesos: unicoReporte.dato1,
-                    coin: unicoReporte.dato2,
-                    premios: unicoReporte.dato3,
-                    banco: unicoReporte.dato4
+                    pesos: unicoReporte.dato1 ?? 0,
+                    coin: unicoReporte.dato2 ?? 0,
+                    premios: unicoReporte.dato3 ?? 0,
+                    banco: unicoReporte.dato4 ?? 0
                 };
             } else {
                 // Ordenar reportes por fecha ascendente
@@ -239,10 +251,10 @@ function calcularCierreMensual(fechaInicio, deviceId) {
                 console.log("Primer reporte del mes:", primerReporte);
                 console.log("Último reporte del mes:", ultimoReporte);
 
-                const pesos = Number(ultimoReporte.dato1);
-                const coin = Number(ultimoReporte.dato2) - Number(primerReporte.dato2);
-                const premios = Number(ultimoReporte.dato3) - Number(primerReporte.dato3);
-                const banco = Number(ultimoReporte.dato4);
+                const pesos = Number(ultimoReporte.dato1 ?? 0);
+                const coin = Number(ultimoReporte.dato2 ?? 0) - Number(primerReporte.dato2 ?? 0);
+                const premios = Number(ultimoReporte.dato3 ?? 0) - Number(primerReporte.dato3 ?? 0);
+                const banco = Number(ultimoReporte.dato4 ?? 0);
 
                 console.log(`Pesos calculados: ${pesos}`);
                 console.log(`Coin calculado: ${coin}`);
