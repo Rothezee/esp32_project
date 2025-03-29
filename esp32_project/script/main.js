@@ -40,15 +40,12 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function fetchData(device) {
-    console.log(`Solicitando datos para ${device.deviceId}...`);
 
     fetch('get_data.php?device_id=' + device.deviceId)
         .then(response => response.json())
         .then(data => {
-            console.log(`Datos recibidos para ${device.deviceId}:`, data);
 
             if (data.error) {
-                console.warn(`Error al obtener datos de ${device.deviceId}:`, data.error);
                 updateElementIfExists(device.pesosId, 'N/A');
                 updateElementIfExists(device.coinId, 'N/A');
                 updateElementIfExists(device.premiosId, 'N/A');
@@ -70,7 +67,6 @@ function fetchData(device) {
             }
         })
         .catch(error => {
-            console.error(`Error en fetch para ${device.deviceId}:`, error);
             updateElementIfExists(device.pesosId, 'N/A');
             updateElementIfExists(device.coinId, 'N/A');
             updateElementIfExists(device.premiosId, 'N/A');
@@ -115,24 +111,18 @@ function setBancoValue(bancoId, value) {
 function checkStatus(deviceId, statusId) {
     if (!statusId) return; // Si el statusId está vacío, no hacemos nada
 
-    console.log(`Verificando estado para ${deviceId}...`);
-
     fetch('check_status.php?device_id=' + deviceId)
         .then(response => response.json())
         .then(data => {
-            console.log(`Estado recibido para ${deviceId}:`, data);
 
             if (data.error) {
-                console.error(`Error al obtener estado de ${deviceId}:`, data.error);
                 updateElementIfExists(statusId, 'Desconectado');
             } else {
                 const statusText = data.status === 'online' ? 'Conectado' : 'Desconectado';
-                console.log(`Actualizando estado de ${deviceId} a ${statusText}`);
                 updateElementIfExists(statusId, statusText);
             }
         })
         .catch(error => {
-            console.error(`Error en fetch para estado de ${deviceId}:`, error);
             updateElementIfExists(statusId, 'Desconectado');
         });
 }

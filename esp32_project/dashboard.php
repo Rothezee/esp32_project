@@ -155,7 +155,7 @@
             <p><strong>FICHAS:</strong> <span id="fichas_expendedora_1">N/A</span></p><br>
             <p><strong>DINERO:</strong> <span id="dinero_expendedora_1">N/A</span></p><br>
         </div>
-        <button onclick="window.location.href='report_expendedora.php?device_id=EXPENDEDORA_1'">Ver Reporte</button>
+        <button onclick="window.location.href='expendedora/report_expendedora.php?device_id=EXPENDEDORA_1'">Ver Reporte</button>
     </div>
     
     <!-- Sección para otras máquinas expendedoras -->

@@ -2,7 +2,7 @@
 $servername = "localhost";
 $username = "root";
 $password = "39090169";
-$dbname = "esp32_project";
+$dbname = "login_system";
 
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
