@@ -3,6 +3,11 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Crear un archivo de registro de errores
+$log_file = 'error_log.txt';
+ini_set('log_errors', 1);
+ini_set('error_log', $log_file);
+
 $servername = "localhost";
 $username = "root";
 $password = "39090169";
@@ -13,40 +18,59 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Verificar conexión
 if ($conn->connect_error) {
-    header('Content-Type: application/json');
-    die(json_encode(["error" => "Connection failed: " . $conn->connect_error]));
+    error_log("Connection failed: " . $conn->connect_error);
+    die("Connection failed: " . $conn->connect_error);
 }
 
-// Verificar si se ha proporcionado un device_id
-if (!isset($_GET['id_expendedora'])) {
-    header('Content-Type: application/json');
-    die(json_encode(["error" => "id_expendedora no proporcionado."]));
+// Obtener los datos POST
+$data = json_decode(file_get_contents('php://input'), true);
+
+// Verificar que se hayan recibido todos los datos necesarios
+if (!isset($data['id_expendedora']) || !isset($data['fichas']) || !isset($data['dinero']) || !isset($data['p1']) || !isset($data['p2']) || !isset($data['p3'])) {
+    error_log("Missing data");
+    echo json_encode(["error" => "Missing data"]);
+    $conn->close();
+    exit();
 }
 
-$id_expendedora = $_GET['id_expendedora'];
+$id_expendedora = $data['id_expendedora'];
+$fichas = $data['fichas'];
+$dinero = $data['dinero'];
+$p1 = $data['p1'];
+$p2 = $data['p2'];
+$p3 = $data['p3'];
+$timestamp = date("Y-m-d H:i:s");
 
-// Consulta para obtener los datos de la expendedora
-$sql = "SELECT id_expendedora, fichas, dinero, p1, p2, p3, timestamp FROM cierres_expendedoras WHERE id_expendedora = ?";
+// Insertar datos en la tabla cierres_expendedoras
+$sql = "INSERT INTO cierres_expendedoras (id_expendedora, fichas, dinero, p1, p2, p3, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
-    header('Content-Type: application/json');
-    die(json_encode(["error" => "Prepare failed: " . $conn->error]));
+    error_log("Prepare failed: " . $conn->error);
+    echo json_encode(["error" => "Prepare failed"]);
+    $conn->close();
+    exit();
 }
-$stmt->bind_param("s", $id_expendedora);
-$stmt->execute();
-$result = $stmt->get_result();
+$stmt->bind_param("siiiiis", $id_expendedora, $fichas, $dinero, $p1, $p2, $p3, $timestamp);
 
-$reports = [];
-while ($row = $result->fetch_assoc()) {
-    $reports[] = $row;
+if ($stmt->execute()) {
+    // Actualizar el last_heartbeat en la tabla devices
+    $update_sql = "INSERT INTO devices (device_id, last_heartbeat) VALUES (?, NOW()) ON DUPLICATE KEY UPDATE last_heartbeat = NOW()";
+    $update_stmt = $conn->prepare($update_sql);
+    if (!$update_stmt) {
+        error_log("Update prepare failed: " . $conn->error);
+        echo json_encode(["error" => "Update prepare failed"]);
+        $conn->close();
+        exit();
+    }
+    $update_stmt->bind_param("s", $id_expendedora);
+    $update_stmt->execute();
+    $update_stmt->close();
+
+    echo json_encode(["success" => "Data inserted successfully"]);
+} else {
+    error_log("Execute failed: " . $stmt->error);
+    echo json_encode(["error" => "Error inserting data"]);
 }
-
-$response = [
-    "reports" => $reports
-];
-
-header('Content-Type: application/json');
-echo json_encode($response);
 
 $stmt->close();
 $conn->close();
