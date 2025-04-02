@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
     console.log("DOM completamente cargado y parseado");
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -16,35 +16,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
     }
 
-    // Obtener reportes
-    fetch(`/esp32_project/expendedora/get_report_expendedora.php?device_id=${device_id}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log("Datos recibidos de reportes:", data);
-
-            if (data.error) {
-                console.error(data.error);
-                return;
-            }
-
-            if (data.reports && Array.isArray(data.reports)) {
-                // Invertir el array de reportes para mostrar el más reciente en la cima
-                const reversedReports = data.reports.reverse();
-                cargarTabla('report_table', reversedReports, ['timestamp', 'dato1', 'dato2']);
-            } else {
-                console.warn('No se recibieron reportes válidos.');
-            }
-        })
-        .catch(error => {
-            console.error("Error al obtener los datos de reportes:", error);
-        });
-
-    // Obtener cierres diarios
+    // Obtener datos de cierres diarios
     fetch(`/esp32_project/expendedora/get_close_expendedora.php?id_expendedora=${device_id}`)
         .then(response => {
             if (!response.ok) {
@@ -61,7 +33,7 @@ document.addEventListener("DOMContentLoaded", function() {
             }
 
             if (data.reports && Array.isArray(data.reports)) {
-                cargarTabla('tabla-diarios', data.reports, ['timestamp', 'fichas', 'dinero', 'p1', 'p2', 'p3']);
+                cargarTablaDiarios('tabla-diarios', data.reports);
             } else {
                 console.warn('No se recibieron cierres diarios válidos.');
             }
@@ -69,7 +41,117 @@ document.addEventListener("DOMContentLoaded", function() {
         .catch(error => {
             console.error("Error al obtener los datos de cierres diarios:", error);
         });
+
+    // Obtener datos de subcierres
+    fetch(`/esp32_project/expendedora/get_subcierre_expendedora.php?id_expendedora=${device_id}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Datos recibidos de subcierres:", data);
+
+            if (data.error) {
+                console.error(data.error);
+                return;
+            }
+
+            if (data.partial_reports && Array.isArray(data.partial_reports)) {
+                cargarTablaSubcierres(data.partial_reports);
+            } else {
+                console.warn('No se recibieron subcierres válidos.');
+            }
+        })
+        .catch(error => {
+            console.error("Error al obtener los datos de subcierres:", error);
+        });
 });
+
+function cargarTablaDiarios(tablaId, reports) {
+    const tabla = document.getElementById(tablaId).querySelector('tbody');
+    tabla.innerHTML = ''; // Limpiar la tabla
+
+    console.log("Cargando cierres diarios en la tabla:", reports);
+
+    reports.forEach(report => {
+        const fecha = report.timestamp.split(' ')[0]; // Obtener solo la fecha de timestamp
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+            <td>${report.timestamp}</td>
+            <td>${report.fichas}</td>
+            <td>${report.dinero}</td>
+            <td>${report.p1}</td>
+            <td>${report.p2}</td>
+            <td>${report.p3}</td>
+            <td><button id="btn-${fecha}" onclick="toggleParciales('${fecha}')">Extender</button></td>
+        `;
+        tabla.appendChild(fila);
+
+        // Crear una fila para los cierres parciales
+        const filaParciales = document.createElement("tr");
+        filaParciales.id = `parciales-${fecha}`;
+        filaParciales.style.display = "none";
+        filaParciales.innerHTML = `
+            <td colspan="7">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Fichas</th>
+                            <th>Dinero</th>
+                            <th>P1</th>
+                            <th>P2</th>
+                            <th>P3</th>
+                            <th>Empleado</th>
+                            <th>Creado</th>
+                            <th>Actualizado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="subcierres-${fecha}">
+                        <!-- Subcierres se cargarán aquí -->
+                    </tbody>
+                </table>
+            </td>
+        `;
+        tabla.appendChild(filaParciales);
+    });
+}
+
+function cargarTablaSubcierres(partialReports) {
+    console.log("Cargando subcierres en la tabla:", partialReports);
+
+    partialReports.forEach(parcial => {
+        const fecha = parcial.updated_at.split(' ')[0]; // Obtener solo la fecha de updated_at
+        const subcierresTabla = document.getElementById(`subcierres-${fecha}`);
+        if (subcierresTabla) {
+            const filaParcial = document.createElement('tr');
+            filaParcial.innerHTML = `
+                <td>${parcial.created_at}</td>
+                <td>${parcial.partial_fichas}</td>
+                <td>${parcial.partial_dinero}</td>
+                <td>${parcial.partial_p1}</td>
+                <td>${parcial.partial_p2}</td>
+                <td>${parcial.partial_p3}</td>
+                <td>${parcial.employee_id}</td>
+                <td>${parcial.created_at}</td>
+                <td>${parcial.updated_at}</td>
+            `;
+            subcierresTabla.appendChild(filaParcial);
+        } else {
+            console.warn(`No se encontró la tabla para subcierres con fecha: ${fecha}`);
+        }
+    });
+}
+
+function toggleParciales(fecha) {
+    const filaParciales = document.getElementById(`parciales-${fecha}`);
+    if (filaParciales) {
+        filaParciales.style.display = filaParciales.style.display === "none" ? "table-row" : "none";
+    }
+}
+
 
 function cargarTabla(idTabla, datos, columnas) {
     const tbody = document.getElementById(idTabla)?.querySelector("tbody");
