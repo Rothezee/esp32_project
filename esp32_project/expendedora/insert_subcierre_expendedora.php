@@ -3,6 +3,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+
 // Crear un archivo de registro de errores
 $log_file = 'error_log.txt';
 ini_set('log_errors', 1);
@@ -26,23 +27,24 @@ if ($conn->connect_error) {
 $data = json_decode(file_get_contents('php://input'), true);
 
 // Verificar que se hayan recibido todos los datos necesarios
-if (!isset($data['id_expendedora']) || !isset($data['fichas']) || !isset($data['dinero']) || !isset($data['p1']) || !isset($data['p2']) || !isset($data['p3'])) {
+if (!isset($data['device_id']) || !isset($data['partial_fichas']) || !isset($data['partial_dinero']) || !isset($data['partial_p1']) || !isset($data['partial_p2']) || !isset($data['partial_p3']) || !isset($data['employee_id'])) {
     error_log("Missing data");
     echo json_encode(["error" => "Missing data"]);
     $conn->close();
     exit();
 }
 
-$id_expendedora = $data['id_expendedora'];
-$fichas = $data['fichas'];
-$dinero = $data['dinero'];
-$p1 = $data['p1'];
-$p2 = $data['p2'];
-$p3 = $data['p3'];
-$timestamp = date("Y-m-d H:i:s");
+$device_id = $data['device_id'];
+$partial_fichas = $data['partial_fichas'];
+$partial_dinero = $data['partial_dinero'];
+$partial_p1 = $data['partial_p1'];
+$partial_p2 = $data['partial_p2'];
+$partial_p3 = $data['partial_p3'];
+$employee_id = $data['employee_id'];
+$created_at = date("Y-m-d H:i:s");
 
-// Insertar datos en la tabla cierres_expendedoras
-$sql = "INSERT INTO cierres_expendedoras (id_expendedora, fichas, dinero, p1, p2, p3, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)";
+// Insertar datos en la tabla subcierres_expendedoras
+$sql = "INSERT INTO subcierres_expendedoras (cierre_expendedora_id, partial_fichas, partial_dinero, partial_p1, partial_p2, partial_p3, employee_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     error_log("Prepare failed: " . $conn->error);
@@ -50,22 +52,9 @@ if (!$stmt) {
     $conn->close();
     exit();
 }
-$stmt->bind_param("siiiiis", $id_expendedora, $fichas, $dinero, $p1, $p2, $p3, $timestamp);
+$stmt->bind_param("siiiiiss", $device_id, $partial_fichas, $partial_dinero, $partial_p1, $partial_p2, $partial_p3, $employee_id, $created_at);
 
 if ($stmt->execute()) {
-    // Actualizar el last_heartbeat en la tabla devices
-    $update_sql = "INSERT INTO devices (device_id, last_heartbeat) VALUES (?, NOW()) ON DUPLICATE KEY UPDATE last_heartbeat = NOW()";
-    $update_stmt = $conn->prepare($update_sql);
-    if (!$update_stmt) {
-        error_log("Update prepare failed: " . $conn->error);
-        echo json_encode(["error" => "Update prepare failed"]);
-        $conn->close();
-        exit();
-    }
-    $update_stmt->bind_param("s", $id_expendedora);
-    $update_stmt->execute();
-    $update_stmt->close();
-
     echo json_encode(["success" => "Data inserted successfully"]);
 } else {
     error_log("Execute failed: " . $stmt->error);

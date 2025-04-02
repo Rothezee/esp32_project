@@ -25,8 +25,8 @@ if (!isset($_GET['id_expendedora'])) {
 
 $id_expendedora = $_GET['id_expendedora'];
 
-// Consulta para obtener los cierres diarios
-$sql = "SELECT id_expendedora, fichas, dinero, p1, p2, p3, timestamp FROM cierres_expendedoras WHERE id_expendedora = ?";
+// Consulta para obtener los cierres parciales
+$sql = "SELECT id, cierre_expendedora_id, partial_fichas, partial_dinero, partial_p1, partial_p2, partial_p3, employee_id, created_at, updated_at FROM subcierres_expendedoras WHERE cierre_expendedora_id = ?";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     header('Content-Type: application/json');
@@ -36,13 +36,13 @@ $stmt->bind_param("s", $id_expendedora);
 $stmt->execute();
 $result = $stmt->get_result();
 
-$reports = [];
+$partial_reports = [];
 while ($row = $result->fetch_assoc()) {
-    $reports[] = $row;
+    $partial_reports[] = $row;
 }
 
 $response = [
-    "reports" => $reports
+    "partial_reports" => $partial_reports
 ];
 
 header('Content-Type: application/json');

@@ -68,3 +68,20 @@
 [27-Mar-2025 15:22:56 UTC] Execute failed: Duplicate entry 'EXPENDEDORA_1' for key 'PRIMARY'
 [29-Mar-2025 22:37:52 UTC] Execute failed: Duplicate entry 'EXPENDEDORA_1' for key 'PRIMARY'
 [29-Mar-2025 22:38:14 UTC] Execute failed: Duplicate entry 'EXPENDEDORA_1' for key 'PRIMARY'
+[29-Mar-2025 23:22:01 UTC] Execute failed: Duplicate entry 'EXPENDEDORA_1' for key 'PRIMARY'
+[29-Mar-2025 23:23:49 UTC] Execute failed: Duplicate entry 'EXPENDEDORA_1' for key 'PRIMARY'
+[29-Mar-2025 23:24:10 UTC] Execute failed: Duplicate entry 'EXPENDEDORA_1' for key 'PRIMARY'
+[01-Apr-2025 15:27:54 UTC] Execute failed: Duplicate entry 'EXPENDEDORA_1' for key 'PRIMARY'
+[01-Apr-2025 15:28:25 UTC] Execute failed: Duplicate entry 'EXPENDEDORA_1' for key 'PRIMARY'
+[01-Apr-2025 15:30:47 UTC] Missing data
+[01-Apr-2025 15:38:44 UTC] Execute failed: Duplicate entry 'EXPENDEDORA_1' for key 'PRIMARY'
+[02-Apr-2025 19:55:13 UTC] Missing data
+[02-Apr-2025 20:05:26 UTC] Missing data
+[02-Apr-2025 20:10:25 UTC] Missing data
+[02-Apr-2025 20:25:00 UTC] Missing data
+[02-Apr-2025 20:26:13 UTC] Missing data
+[02-Apr-2025 20:26:48 UTC] Missing data
+[02-Apr-2025 20:31:16 UTC] Missing data
+[02-Apr-2025 20:52:55 UTC] Missing data
+[02-Apr-2025 20:55:50 UTC] Missing data
+[02-Apr-2025 20:55:51 UTC] Missing data

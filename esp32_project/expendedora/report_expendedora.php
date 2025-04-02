@@ -49,7 +49,7 @@
             </tbody>
         </table>
     </section>
-
+    
     <section id="diarios" class="seccion">
         <h2>Cierres Diarios</h2>
         <div class="reportsContainer">
@@ -62,6 +62,7 @@
                         <th>P1</th>
                         <th>P2</th>
                         <th>P3</th>
+                        <th>Extender</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -70,7 +71,7 @@
             </table>
         </div>
     </section>
-
+    
     <section id="semanales" class="seccion">
         <h2>Cierres Semanales</h2>
         <label for="selector-inicio-semana">Seleccione el día de inicio de la semana:</label>
@@ -97,7 +98,7 @@
         <h2>Cierres Mensuales</h2>
         <label for="selector-inicio-mes">Seleccione un mes:</label>
         <input type="month" id="selector-inicio-mes" placeholder="Seleccionar mes">
-
+    
         <table id="tabla-mensuales">
             <thead>
                 <tr>
