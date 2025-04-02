@@ -26,22 +26,23 @@ if ($conn->connect_error) {
 $data = json_decode(file_get_contents('php://input'), true);
 
 // Verificar que se hayan recibido todos los datos necesarios
-if (!isset($data['device_id']) || !isset($data['fichas']) || !isset($data['dinero']) || !isset($data['p1']) || !isset($data['p2']) || !isset($data['p3'])) {
+if (!isset($data['id_expendedora']) || !isset($data['fichas']) || !isset($data['dinero']) || !isset($data['p1']) || !isset($data['p2']) || !isset($data['p3'])) {
     error_log("Missing data");
     echo json_encode(["error" => "Missing data"]);
     $conn->close();
     exit();
 }
 
-$id_expendedora = $data['device_id'];
+$id_expendedora = $data['id_expendedora'];
 $fichas = $data['fichas'];
 $dinero = $data['dinero'];
 $p1 = $data['p1'];
 $p2 = $data['p2'];
 $p3 = $data['p3'];
+$timestamp = date("Y-m-d H:i:s");
 
 // Insertar datos en la tabla cierres_expendedoras
-$sql = "INSERT INTO cierres_expendedoras (id_expendedora, fichas, dinero, p1, p2, p3) VALUES (?, ?, ?, ?, ?, ?)";
+$sql = "INSERT INTO cierres_expendedoras (id_expendedora, fichas, dinero, p1, p2, p3, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     error_log("Prepare failed: " . $conn->error);
@@ -49,7 +50,7 @@ if (!$stmt) {
     $conn->close();
     exit();
 }
-$stmt->bind_param("siiiii", $id_expendedora, $fichas, $dinero, $p1, $p2, $p3);
+$stmt->bind_param("siiiiis", $id_expendedora, $fichas, $dinero, $p1, $p2, $p3, $timestamp);
 
 if ($stmt->execute()) {
     // Actualizar el last_heartbeat en la tabla devices
