@@ -9,6 +9,7 @@
 <body>
 <header>
         <nav class="navbar">
+            <img src="img/ChatGPT Image 1 abr 2025, 21_59_11-Photoroom.png" alt="LOGO">
             <div class="container_navbar">
                 <div class="navbar-header">
                     <button class="navbar-toggler" data-toggle="open-navbar1">
