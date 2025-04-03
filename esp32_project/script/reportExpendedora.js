@@ -95,6 +95,37 @@ document.addEventListener("DOMContentLoaded", function () {
         .catch(error => {
             console.error("Error al obtener los datos de subcierres:", error);
         });
+
+    // Hacer las tablas desplazables horizontalmente con el mouse
+    const containers = document.querySelectorAll(".table-container");
+    containers.forEach(container => {
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        container.addEventListener("mousedown", (e) => {
+            isDown = true;
+            container.classList.add("active");
+            startX = e.pageX - container.offsetLeft;
+            scrollLeft = container.scrollLeft;
+        });
+
+        container.addEventListener("mouseleave", () => {
+            isDown = false;
+        });
+
+        container.addEventListener("mouseup", () => {
+            isDown = false;
+        });
+
+        container.addEventListener("mousemove", (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - container.offsetLeft;
+            const walk = (x - startX) * 2; // Ajusta la velocidad del desplazamiento
+            container.scrollLeft = scrollLeft - walk;
+        });
+    });
 });
 
 function cargarTablaDiarios(tablaId, reports) {
@@ -123,24 +154,24 @@ function cargarTablaDiarios(tablaId, reports) {
         filaParciales.style.display = "none";
         filaParciales.innerHTML = `
             <td colspan="7">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Fichas</th>
-                            <th>Dinero</th>
-                            <th>P1</th>
-                            <th>P2</th>
-                            <th>P3</th>
-                            <th>Empleado</th>
-                            <th>Creado</th>
-                            <th>Actualizado</th>
-                        </tr>
-                    </thead>
-                    <tbody id="subcierres-${fecha}">
-                        <!-- Subcierres se cargarán aquí -->
-                    </tbody>
-                </table>
+                <div class="table-container" id="scroll-container-parciales-${fecha}">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Fichas</th>
+                                <th>Dinero</th>
+                                <th>P1</th>
+                                <th>P2</th>
+                                <th>P3</th>
+                                <th>Empleado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subcierres-${fecha}">
+                            <!-- Subcierres se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
             </td>
         `;
         tabla.appendChild(filaParciales);
@@ -163,8 +194,6 @@ function cargarTablaSubcierres(partialReports) {
                 <td>${parcial.partial_p2}</td>
                 <td>${parcial.partial_p3}</td>
                 <td>${parcial.employee_id}</td>
-                <td>${parcial.created_at}</td>
-                <td>${parcial.updated_at}</td>
             `;
             subcierresTabla.appendChild(filaParcial);
         } else {
