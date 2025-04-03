@@ -16,6 +16,34 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
+    // Obtener reportes
+    fetch(`/esp32_project/expendedora/get_report_expendedora.php?device_id=${device_id}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Datos recibidos de reportes:", data);
+
+            if (data.error) {
+                console.error(data.error);
+                return;
+            }
+
+            if (data.reports && Array.isArray(data.reports)) {
+                // Invertir el array de reportes para mostrar el más reciente en la cima
+                const reversedReports = data.reports.reverse();
+                cargarTabla('report_table', reversedReports, ['timestamp', 'dato1', 'dato2']);
+            } else {
+                console.warn('No se recibieron reportes válidos.');
+            }
+        })
+        .catch(error => {
+            console.error("Error al obtener los datos de reportes:", error);
+        });
+
     // Obtener datos de cierres diarios
     fetch(`/esp32_project/expendedora/get_close_expendedora.php?id_expendedora=${device_id}`)
         .then(response => {
@@ -151,7 +179,6 @@ function toggleParciales(fecha) {
         filaParciales.style.display = filaParciales.style.display === "none" ? "table-row" : "none";
     }
 }
-
 
 function cargarTabla(idTabla, datos, columnas) {
     const tbody = document.getElementById(idTabla)?.querySelector("tbody");
