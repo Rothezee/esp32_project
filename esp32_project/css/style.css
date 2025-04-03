@@ -388,3 +388,27 @@ td {
 th, td {
     text-align: center;
 }
+
+
+/* Estilo para el logo */
+#logo {
+  width: 150px; /* Ajusta el ancho según tus necesidades */
+  height: 50px; /* Ajusta la altura según tus necesidades */
+  object-fit: cover; /* Esto asegura que la imagen se recorte para llenar el contenedor */
+  overflow: hidden; /* Esto recorta cualquier parte de la imagen que se salga del contenedor */
+}
+
+/* Media query para pantallas pequeñas */
+@media (max-width: 768px) {
+  #logo {
+      position: absolute;
+      right: 10px; /* Ajusta según sea necesario */
+      top: 10px; /* Ajusta según sea necesario */
+  }
+  
+  .container_navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+  }
+}
