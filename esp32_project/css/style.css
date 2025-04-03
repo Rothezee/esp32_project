@@ -144,6 +144,14 @@ a {
   margin-bottom: 0;
   list-style: none;
 }
+
+.navbar img {
+  width: 150px; 
+  height: 50px; 
+  object-fit: cover; /* Esto asegura que la imagen se recorte para llenar el contenedor */
+  overflow: hidden; /* Esto recorta cualquier parte de la imagen que se salga del contenedor */
+}
+
 @media (max-width: 768px) {
   .navbar .navbar-menu .navbar-nav {
     width: 100%;
@@ -194,11 +202,6 @@ main {
 
 h2 {
   margin-bottom: 20px;
-}
-
-img {
-  height: 20px;
-  width: 20px;
 }
 
 label {
@@ -259,7 +262,6 @@ select {
   flex: 1 1 calc(20% - 40px); /* Ancho del 20% menos el margen */
   box-sizing: border-box; /* Incluir padding y border en el cálculo del ancho */
 }
-
 
 /* Estilos para otros elementos */
 .machine-box {
@@ -335,6 +337,34 @@ button {
 .reportsContainer{
   display: block;
 }
+
+/* Estilos para hacer la tabla deslizable horizontalmente */
+.table-container {
+  overflow-x: auto;
+  white-space: nowrap;
+  width: 100%;
+  max-width: 100vw;
+  border: 1px solid #ccc;
+  padding: 10px;
+  display: flex;
+  cursor: grab;
+}
+
+.table-container table {
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+.table-container th, .table-container td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: center;
+}
+
+.table-container thead {
+  background-color: #f2f2f2;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
