@@ -41,11 +41,10 @@ Este proyecto consiste en una web de monitoreo en tiempo real para sistemas basa
 - Ingresa con tu usuario y contraseña.
 - Visualiza el estado de todas las máquinas conectadas desde el dashboard.
 - Consulta reportes de actividad, premios entregados y más.
-- Administra usuarios y configuraciones según permisos.
+- Administra usuarios y configuraciones según permisos (No tiene sistema de registro dado que solo es una pagina para administradores).
 
 ## Notas
 
-- Puedes ver o modificar la estructura y archivos aquí: [Carpeta principal del proyecto](https://github.com/Rothezee/esp32_project/tree/main/esp32_project)
 - El sistema es extendible y puedes agregar más tipos de máquinas o sensores conectados al ESP32.
 
 ---
