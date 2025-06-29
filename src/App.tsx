@@ -15,7 +15,7 @@ function App() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
       <Layout>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

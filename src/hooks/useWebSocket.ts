@@ -4,42 +4,66 @@ import { useQueryClient } from '@tanstack/react-query'
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null)
   const queryClient = useQueryClient()
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout>()
 
   useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${protocol}//${window.location.host}/ws`
-    
-    wsRef.current = new WebSocket(wsUrl)
-
-    wsRef.current.onopen = () => {
-      console.log('WebSocket connected')
-    }
-
-    wsRef.current.onmessage = (event) => {
+    const connect = () => {
       try {
-        const data = JSON.parse(event.data)
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+        const wsUrl = `${protocol}//${window.location.host}/ws`
         
-        if (data.type === 'device_update') {
-          // Invalidate devices query to trigger refetch
-          queryClient.invalidateQueries({ queryKey: ['devices'] })
+        wsRef.current = new WebSocket(wsUrl)
+
+        wsRef.current.onopen = () => {
+          console.log('WebSocket connected')
+          // Clear any existing reconnect timeout
+          if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current)
+          }
+        }
+
+        wsRef.current.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data)
+            
+            if (data.type === 'device_update') {
+              // Invalidate devices query to trigger refetch
+              queryClient.invalidateQueries({ queryKey: ['devices'] })
+            }
+          } catch (error) {
+            console.error('Error parsing WebSocket message:', error)
+          }
+        }
+
+        wsRef.current.onclose = () => {
+          console.log('WebSocket disconnected')
+          // Attempt to reconnect after 5 seconds
+          reconnectTimeoutRef.current = setTimeout(() => {
+            if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
+              connect()
+            }
+          }, 5000)
+        }
+
+        wsRef.current.onerror = (error) => {
+          console.error('WebSocket error:', error)
         }
       } catch (error) {
-        console.error('Error parsing WebSocket message:', error)
+        console.error('Failed to create WebSocket connection:', error)
+        // Retry connection after 5 seconds
+        reconnectTimeoutRef.current = setTimeout(connect, 5000)
       }
     }
 
-    wsRef.current.onclose = () => {
-      console.log('WebSocket disconnected')
-      // Attempt to reconnect after 5 seconds
-      setTimeout(() => {
-        if (wsRef.current?.readyState === WebSocket.CLOSED) {
-          // Reconnect logic would go here
-        }
-      }, 5000)
-    }
+    connect()
 
     return () => {
-      wsRef.current?.close()
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+      }
+      if (wsRef.current) {
+        wsRef.current.close()
+      }
     }
   }, [queryClient])
 

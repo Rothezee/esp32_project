@@ -13,6 +13,7 @@ import {
   ChartOptions,
   ChartData,
   ArcElement,
+  Filler,
 } from 'chart.js'
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
 import 'chartjs-adapter-date-fns'
@@ -24,6 +25,7 @@ ChartJS.register(
   LineElement,
   BarElement,
   ArcElement,
+  Filler,
   Title,
   Tooltip,
   Legend,

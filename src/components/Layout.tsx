@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react'
+import { ReactNode, useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { 
   LogOut, 
@@ -24,6 +24,30 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  // Close sidebar when route changes on mobile
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [location.pathname])
+
+  // Close sidebar when clicking outside on mobile
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const sidebar = document.getElementById('sidebar')
+      const menuButton = document.getElementById('menu-button')
+      
+      if (sidebarOpen && sidebar && menuButton && 
+          !sidebar.contains(event.target as Node) && 
+          !menuButton.contains(event.target as Node)) {
+        setSidebarOpen(false)
+      }
+    }
+
+    if (sidebarOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [sidebarOpen])
+
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Analytics', href: '/analytics', icon: TrendingUp },
@@ -40,7 +64,7 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="h-screen bg-gray-50 flex overflow-hidden">
       {/* Mobile sidebar backdrop */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -55,11 +79,11 @@ export default function Layout({ children }: LayoutProps) {
       </AnimatePresence>
 
       {/* Sidebar */}
-      <motion.div
-        initial={false}
-        animate={{ x: sidebarOpen ? 0 : '-100%' }}
-        className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-large lg:translate-x-0 lg:static lg:inset-0 lg:flex lg:flex-col"
-      >
+      <div className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-large transform transition-transform duration-300 ease-in-out
+        lg:translate-x-0 lg:static lg:inset-0 lg:flex lg:flex-col
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `} id="sidebar">
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center justify-between px-6 border-b border-gray-200 flex-shrink-0">
@@ -71,7 +95,7 @@ export default function Layout({ children }: LayoutProps) {
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-600"
+              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
@@ -87,13 +111,12 @@ export default function Layout({ children }: LayoutProps) {
                 <Link
                   key={item.name}
                   to={item.href}
-                  onClick={() => setSidebarOpen(false)}
                   className={`sidebar-nav ${
                     active ? 'sidebar-nav-active' : 'sidebar-nav-inactive'
                   }`}
                 >
-                  <Icon className="w-5 h-5 mr-3" />
-                  {item.name}
+                  <Icon className="w-5 h-5 mr-3 flex-shrink-0" />
+                  <span className="truncate">{item.name}</span>
                 </Link>
               )
             })}
@@ -102,20 +125,20 @@ export default function Layout({ children }: LayoutProps) {
           {/* User section */}
           <div className="border-t border-gray-200 p-4 flex-shrink-0">
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
+              <div className="flex items-center min-w-0 flex-1">
+                <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
                   <span className="text-sm font-medium text-primary-700">
                     {user?.username.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-700">{user?.username}</p>
+                <div className="ml-3 min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-700 truncate">{user?.username}</p>
                   <p className="text-xs text-gray-500">Administrator</p>
                 </div>
               </div>
               <button
                 onClick={logout}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors"
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors flex-shrink-0"
                 title="Logout"
               >
                 <LogOut className="w-4 h-4" />
@@ -123,16 +146,17 @@ export default function Layout({ children }: LayoutProps) {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar - Always visible */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top bar */}
         <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 flex-shrink-0">
           <div className="flex h-16 items-center justify-between">
             <button
+              id="menu-button"
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-600"
+              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 transition-colors"
             >
               <Menu className="h-5 w-5" />
             </button>
@@ -155,6 +179,7 @@ export default function Layout({ children }: LayoutProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
+            className="h-full"
           >
             {children}
           </motion.div>
