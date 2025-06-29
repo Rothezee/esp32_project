@@ -11,7 +11,9 @@ import {
   Zap,
   Calendar as CalendarIcon,
   Download,
-  Filter
+  Filter,
+  AlertCircle,
+  Loader2
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns'
@@ -23,8 +25,8 @@ export default function AnalyticsPage() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [showCalendar, setShowCalendar] = useState(false)
 
-  const { data: devices } = useDevices()
-  const { data: analytics, isLoading } = useAnalytics(deviceId || undefined, period)
+  const { data: devices, isLoading: devicesLoading } = useDevices()
+  const { data: analytics, isLoading: analyticsLoading, error } = useAnalytics(deviceId || undefined, period)
 
   const selectedDevice = deviceId ? devices?.find(d => d.id === deviceId) : null
 
@@ -47,87 +49,143 @@ export default function AnalyticsPage() {
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date)
     setShowCalendar(false)
-    // You can implement custom date range logic here
   }
 
-  // Mock chart data - replace with real data from analytics
-  const chartData = {
-    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-    datasets: [
-      {
-        label: 'Actividad',
-        data: [12, 19, 3, 5, 2, 3, 9],
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        fill: true,
-      },
-    ],
+  // Loading state
+  if (devicesLoading || analyticsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+        <span className="ml-3 text-gray-600">Cargando analytics...</span>
+      </div>
+    )
   }
 
-  const barChartData = {
-    labels: ['Grúas', 'Expendedoras', 'Videojuegos', 'Ticketeras'],
-    datasets: [
-      {
-        label: 'Dispositivos Activos',
-        data: [5, 2, 3, 2],
-        backgroundColor: [
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(16, 185, 129, 0.8)',
-          'rgba(245, 158, 11, 0.8)',
-          'rgba(139, 92, 246, 0.8)',
-        ],
-      },
-    ],
+  // Error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <AlertCircle className="w-8 h-8 text-red-600" />
+        <span className="ml-3 text-red-600">Error al cargar los datos de analytics</span>
+      </div>
+    )
   }
 
-  const doughnutData = {
-    labels: ['En línea', 'Desconectado', 'Desconocido'],
-    datasets: [
-      {
-        data: [8, 3, 1],
-        backgroundColor: [
-          'rgba(16, 185, 129, 0.8)',
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(156, 163, 175, 0.8)',
-        ],
-      },
-    ],
-  }
+  // Calculate metrics from devices data
+  const totalDevices = devices?.length || 0
+  const onlineDevices = devices?.filter(d => d.status === 'online').length || 0
+  const offlineDevices = devices?.filter(d => d.status === 'offline').length || 0
+  const efficiency = totalDevices > 0 ? Math.round((onlineDevices / totalDevices) * 100) : 0
 
   const metrics = [
     {
-      title: 'Total de Eventos',
-      value: '1,234',
-      change: 12.5,
+      title: 'Total Dispositivos',
+      value: totalDevices.toString(),
+      change: 0,
       changeType: 'increase' as const,
       icon: Activity,
       color: 'from-blue-500 to-blue-600',
     },
     {
-      title: 'Promedio Diario',
-      value: '176',
-      change: -2.3,
-      changeType: 'decrease' as const,
+      title: 'En Línea',
+      value: onlineDevices.toString(),
+      change: 0,
+      changeType: 'increase' as const,
       icon: TrendingUp,
       color: 'from-green-500 to-green-600',
     },
     {
-      title: 'Pico Máximo',
-      value: '89',
-      change: 8.1,
+      title: 'Desconectados',
+      value: offlineDevices.toString(),
+      change: 0,
+      changeType: 'decrease' as const,
+      icon: TrendingDown,
+      color: 'from-red-500 to-red-600',
+    },
+    {
+      title: 'Eficiencia',
+      value: `${efficiency}%`,
+      change: 0,
       changeType: 'increase' as const,
       icon: Zap,
       color: 'from-purple-500 to-purple-600',
     },
-    {
-      title: 'Eficiencia',
-      value: '94.2%',
-      change: 1.2,
-      changeType: 'increase' as const,
-      icon: TrendingUp,
-      color: 'from-orange-500 to-orange-600',
-    },
   ]
+
+  // Chart data based on actual device data
+  const devicesByType = devices?.reduce((acc, device) => {
+    acc[device.type] = (acc[device.type] || 0) + 1
+    return acc
+  }, {} as Record<string, number>) || {}
+
+  const deviceTypeLabels = Object.keys(devicesByType)
+  const deviceTypeCounts = Object.values(devicesByType)
+
+  const barChartData = {
+    labels: deviceTypeLabels.map(type => {
+      switch (type) {
+        case 'grua': return 'Grúas'
+        case 'expendedora': return 'Expendedoras'
+        case 'videojuego': return 'Videojuegos'
+        case 'ticketera': return 'Ticketeras'
+        default: return type
+      }
+    }),
+    datasets: [
+      {
+        label: 'Dispositivos por Tipo',
+        data: deviceTypeCounts,
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.8)',
+          'rgba(16, 185, 129, 0.8)',
+          'rgba(245, 158, 11, 0.8)',
+          'rgba(139, 92, 246, 0.8)',
+          'rgba(236, 72, 153, 0.8)',
+        ],
+        borderColor: [
+          'rgb(59, 130, 246)',
+          'rgb(16, 185, 129)',
+          'rgb(245, 158, 11)',
+          'rgb(139, 92, 246)',
+          'rgb(236, 72, 153)',
+        ],
+        borderWidth: 1,
+      },
+    ],
+  }
+
+  const doughnutData = {
+    labels: ['En línea', 'Desconectado'],
+    datasets: [
+      {
+        data: [onlineDevices, offlineDevices],
+        backgroundColor: [
+          'rgba(16, 185, 129, 0.8)',
+          'rgba(239, 68, 68, 0.8)',
+        ],
+        borderColor: [
+          'rgb(16, 185, 129)',
+          'rgb(239, 68, 68)',
+        ],
+        borderWidth: 2,
+      },
+    ],
+  }
+
+  // Mock time series data - in a real app, this would come from analytics API
+  const timeSeriesData = {
+    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+    datasets: [
+      {
+        label: 'Dispositivos Activos',
+        data: [onlineDevices, onlineDevices + 1, onlineDevices - 1, onlineDevices + 2, onlineDevices, onlineDevices + 1, onlineDevices],
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        fill: true,
+        tension: 0.4,
+      },
+    ],
+  }
 
   return (
     <div className="space-y-8">
@@ -229,16 +287,18 @@ export default function AnalyticsPage() {
             >
               <div className="flex items-center justify-between mb-4">
                 <Icon className="w-8 h-8 text-white/80" />
-                <div className="flex items-center text-white/80">
-                  {metric.changeType === 'increase' ? (
-                    <TrendingUp className="w-4 h-4 mr-1" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4 mr-1" />
-                  )}
-                  <span className="text-sm font-medium">
-                    {Math.abs(metric.change)}%
-                  </span>
-                </div>
+                {metric.change !== 0 && (
+                  <div className="flex items-center text-white/80">
+                    {metric.changeType === 'increase' ? (
+                      <TrendingUp className="w-4 h-4 mr-1" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4 mr-1" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {Math.abs(metric.change)}%
+                    </span>
+                  </div>
+                )}
               </div>
               <div>
                 <p className="text-white/80 text-sm font-medium">{metric.title}</p>
@@ -250,51 +310,112 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="card p-6"
-        >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Actividad en el Tiempo
-          </h3>
-          <Chart type="line" data={chartData} height={300} />
-        </motion.div>
+      {devices && devices.length > 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="card p-6"
+          >
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Actividad en el Tiempo
+            </h3>
+            <Chart type="line" data={timeSeriesData} height={300} />
+          </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="card p-6"
-        >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Dispositivos por Tipo
-          </h3>
-          <Chart type="bar" data={barChartData} height={300} />
-        </motion.div>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="card p-6"
+          >
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Dispositivos por Tipo
+            </h3>
+            {deviceTypeLabels.length > 0 ? (
+              <Chart type="bar" data={barChartData} height={300} />
+            ) : (
+              <div className="flex items-center justify-center h-64 text-gray-500">
+                No hay datos disponibles
+              </div>
+            )}
+          </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="card p-6"
-        >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Estado de Dispositivos
-          </h3>
-          <Chart type="doughnut" data={doughnutData} height={300} />
-        </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="card p-6"
+          >
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Estado de Dispositivos
+            </h3>
+            {totalDevices > 0 ? (
+              <Chart type="doughnut" data={doughnutData} height={300} />
+            ) : (
+              <div className="flex items-center justify-center h-64 text-gray-500">
+                No hay dispositivos configurados
+              </div>
+            )}
+          </motion.div>
 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="card p-6"
+          >
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Resumen de Dispositivos
+            </h3>
+            <div className="space-y-4">
+              {devices?.slice(0, 5).map((device) => (
+                <div key={device.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className={`w-3 h-3 rounded-full mr-3 ${
+                      device.status === 'online' ? 'bg-green-500' : 
+                      device.status === 'offline' ? 'bg-red-500' : 'bg-gray-400'
+                    }`} />
+                    <div>
+                      <p className="font-medium text-gray-900">{device.name}</p>
+                      <p className="text-sm text-gray-500 capitalize">{device.type}</p>
+                    </div>
+                  </div>
+                  <span className={`text-sm font-medium ${
+                    device.status === 'online' ? 'text-green-600' : 
+                    device.status === 'offline' ? 'text-red-600' : 'text-gray-600'
+                  }`}>
+                    {device.status === 'online' ? 'En línea' :
+                     device.status === 'offline' ? 'Desconectado' : 'Desconocido'}
+                  </span>
+                </div>
+              ))}
+              {devices && devices.length > 5 && (
+                <p className="text-sm text-gray-500 text-center">
+                  Y {devices.length - 5} dispositivos más...
+                </p>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      ) : (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="card p-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="card p-12 text-center"
         >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Tendencias Semanales
+          <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No hay dispositivos configurados
           </h3>
-          <Chart type="line" data={chartData} height={300} />
+          <p className="text-gray-600 mb-6">
+            Agrega algunos dispositivos para ver las estadísticas y análisis
+          </p>
+          <button
+            onClick={() => window.location.href = '/devices/new'}
+            className="btn btn-primary"
+          >
+            Agregar Dispositivo
+          </button>
         </motion.div>
-      </div>
+      )}
 
       {/* Device Details */}
       {selectedDevice && (
@@ -328,6 +449,21 @@ export default function AnalyticsPage() {
               <p className="text-lg font-semibold text-gray-900">
                 {format(new Date(selectedDevice.lastHeartbeat), 'dd/MM/yyyy HH:mm')}
               </p>
+            </div>
+          </div>
+          
+          {/* Device Data */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <h4 className="text-md font-semibold text-gray-900 mb-3">Datos Actuales</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {selectedDevice.fields.map((field) => (
+                <div key={field.id} className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-sm font-medium text-gray-500">{field.name}</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {selectedDevice.data[field.key] ?? 'N/A'}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </motion.div>

@@ -12,6 +12,7 @@ import {
   TimeScale,
   ChartOptions,
   ChartData,
+  ArcElement,
 } from 'chart.js'
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
 import 'chartjs-adapter-date-fns'
@@ -22,6 +23,7 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -76,6 +78,7 @@ export default function Chart({ type, data, options, height = 300 }: ChartProps)
         },
       },
       y: {
+        beginAtZero: true,
         grid: {
           color: 'rgba(0, 0, 0, 0.05)',
         },
@@ -94,6 +97,23 @@ export default function Chart({ type, data, options, height = 300 }: ChartProps)
   const chartProps = {
     data,
     options: defaultOptions,
+  }
+
+  // Handle empty data
+  if (!data.datasets || data.datasets.length === 0 || !data.labels || data.labels.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium">No hay datos disponibles</p>
+          <p className="text-xs text-gray-400 mt-1">Los datos aparecerán aquí cuando estén disponibles</p>
+        </div>
+      </div>
+    )
   }
 
   return (

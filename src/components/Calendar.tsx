@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import Calendar from 'react-calendar'
-import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns'
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -19,79 +18,139 @@ export default function CustomCalendar({
   highlightedDates = [],
   mode = 'single'
 }: CalendarProps) {
-  const [value, setValue] = useState<Date | Date[]>(selectedDate || new Date())
-  const [activeStartDate, setActiveStartDate] = useState(new Date())
+  const [currentDate, setCurrentDate] = useState(selectedDate || new Date())
+  const [selectedRange, setSelectedRange] = useState<Date[]>([])
 
-  const handleDateChange = (date: Date | Date[]) => {
-    setValue(date)
-    
-    if (mode === 'single' && date instanceof Date) {
+  const monthStart = startOfMonth(currentDate)
+  const monthEnd = endOfMonth(currentDate)
+  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd })
+
+  // Get first day of week for the month (0 = Sunday, 1 = Monday, etc.)
+  const firstDayOfWeek = monthStart.getDay()
+
+  // Create array of days including empty cells for proper calendar layout
+  const calendarDays = []
+  
+  // Add empty cells for days before the first day of the month
+  for (let i = 0; i < firstDayOfWeek; i++) {
+    calendarDays.push(null)
+  }
+  
+  // Add all days of the month
+  calendarDays.push(...daysInMonth)
+
+  const handleDateClick = (date: Date) => {
+    if (mode === 'single') {
       onDateSelect(date)
-    } else if (mode === 'range' && Array.isArray(date) && date.length === 2) {
-      onRangeSelect?.(date[0], date[1])
+    } else if (mode === 'range') {
+      if (selectedRange.length === 0 || selectedRange.length === 2) {
+        setSelectedRange([date])
+      } else {
+        const newRange = [selectedRange[0], date].sort((a, b) => a.getTime() - b.getTime())
+        setSelectedRange(newRange)
+        onRangeSelect?.(newRange[0], newRange[1])
+      }
     }
   }
 
-  const tileClassName = ({ date, view }: { date: Date; view: string }) => {
-    if (view !== 'month') return ''
-    
-    const classes = []
-    
-    // Highlight specific dates
-    if (highlightedDates.some(d => d.toDateString() === date.toDateString())) {
-      classes.push('bg-primary-100 text-primary-700')
+  const isDateSelected = (date: Date) => {
+    if (mode === 'single') {
+      return selectedDate?.toDateString() === date.toDateString()
+    } else {
+      return selectedRange.some(d => d.toDateString() === date.toDateString())
     }
-    
-    // Today
-    if (date.toDateString() === new Date().toDateString()) {
-      classes.push('bg-primary-600 text-white font-semibold')
-    }
-    
-    return classes.join(' ')
   }
 
-  const tileContent = ({ date, view }: { date: Date; view: string }) => {
-    if (view !== 'month') return null
-    
-    const hasData = highlightedDates.some(d => d.toDateString() === date.toDateString())
-    
-    return hasData ? (
-      <div className="absolute top-1 right-1 w-2 h-2 bg-success-500 rounded-full" />
-    ) : null
+  const isDateInRange = (date: Date) => {
+    if (mode === 'range' && selectedRange.length === 2) {
+      return date >= selectedRange[0] && date <= selectedRange[1]
+    }
+    return false
   }
+
+  const isDateHighlighted = (date: Date) => {
+    return highlightedDates.some(d => d.toDateString() === date.toDateString())
+  }
+
+  const isToday = (date: Date) => {
+    return date.toDateString() === new Date().toDateString()
+  }
+
+  const weekDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="card p-6"
+      className="card p-6 max-w-md mx-auto"
     >
-      <Calendar
-        onChange={handleDateChange}
-        value={value}
-        activeStartDate={activeStartDate}
-        onActiveStartDateChange={({ activeStartDate }) => 
-          setActiveStartDate(activeStartDate || new Date())
-        }
-        selectRange={mode === 'range'}
-        tileClassName={tileClassName}
-        tileContent={tileContent}
-        navigationLabel={({ date }) => (
-          <span className="text-lg font-semibold text-gray-900">
-            {format(date, 'MMMM yyyy')}
-          </span>
-        )}
-        prevLabel={<ChevronLeft className="w-4 h-4" />}
-        nextLabel={<ChevronRight className="w-4 h-4" />}
-        prev2Label={null}
-        next2Label={null}
-        showNeighboringMonth={false}
-        className="w-full"
-      />
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        
+        <h2 className="text-lg font-semibold text-gray-900">
+          {format(currentDate, 'MMMM yyyy')}
+        </h2>
+        
+        <button
+          onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Week days header */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {weekDays.map((day) => (
+          <div key={day} className="p-2 text-center text-xs font-medium text-gray-500">
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {calendarDays.map((date, index) => (
+          <div key={index} className="aspect-square">
+            {date ? (
+              <button
+                onClick={() => handleDateClick(date)}
+                className={`
+                  w-full h-full flex items-center justify-center text-sm font-medium rounded-lg transition-all duration-200
+                  ${isDateSelected(date) 
+                    ? 'bg-primary-600 text-white' 
+                    : isDateInRange(date)
+                    ? 'bg-primary-100 text-primary-700'
+                    : isToday(date)
+                    ? 'bg-primary-100 text-primary-700 font-semibold'
+                    : isDateHighlighted(date)
+                    ? 'bg-success-100 text-success-700'
+                    : 'text-gray-700 hover:bg-gray-100'
+                  }
+                  ${date.getMonth() !== currentDate.getMonth() ? 'text-gray-400' : ''}
+                `}
+              >
+                {date.getDate()}
+                {isDateHighlighted(date) && (
+                  <div className="absolute top-1 right-1 w-2 h-2 bg-success-500 rounded-full" />
+                )}
+              </button>
+            ) : (
+              <div className="w-full h-full" />
+            )}
+          </div>
+        ))}
+      </div>
       
       {/* Quick date selection */}
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <p className="text-sm font-medium text-gray-700 mb-2">Accesos rápidos:</p>
+      <div className="mt-6 pt-4 border-t border-gray-200">
+        <p className="text-sm font-medium text-gray-700 mb-3">Accesos rápidos:</p>
         <div className="flex flex-wrap gap-2">
           {[
             { label: 'Hoy', date: new Date() },
@@ -101,8 +160,8 @@ export default function CustomCalendar({
           ].map((item) => (
             <button
               key={item.label}
-              onClick={() => handleDateChange(item.date)}
-              className="btn btn-ghost text-xs py-1 px-2"
+              onClick={() => handleDateClick(item.date)}
+              className="btn btn-ghost text-xs py-1 px-3"
             >
               {item.label}
             </button>

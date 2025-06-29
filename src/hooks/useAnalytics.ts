@@ -12,12 +12,24 @@ export function useAnalytics(deviceId?: string, period: string = '7d') {
       const params = new URLSearchParams({ period })
       if (deviceId) params.append('deviceId', deviceId)
       
-      const response = await fetch(`/api/analytics?${params}`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch analytics')
+      try {
+        const response = await fetch(`/api/analytics?${params}`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch analytics')
+        }
+        return response.json()
+      } catch (error) {
+        // Return default data if API fails
+        console.warn('Analytics API not available, using default data')
+        return {
+          metrics: [],
+          chartData: {},
+          trends: {}
+        }
       }
-      return response.json()
     },
     refetchInterval: 60000, // Refetch every minute
+    retry: 1, // Only retry once
+    staleTime: 30000, // Consider data stale after 30 seconds
   })
 }
