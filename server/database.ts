@@ -1,101 +1,146 @@
-import sqlite3 from 'sqlite3'
-import { Database } from 'sqlite3'
+import { Pool } from 'pg'
 import bcrypt from 'bcryptjs'
 
-let db: Database
+let pool: Pool
 
 export function initDatabase() {
-  db = new sqlite3.Database(process.env.DATABASE_URL || './database.sqlite')
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+  })
 
   // Create tables
-  db.serialize(() => {
+  createTables()
+}
+
+async function createTables() {
+  const client = await pool.connect()
+  
+  try {
+    await client.query('BEGIN')
+
     // Users table
-    db.run(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         username TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `)
 
     // Devices table
-    db.run(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS devices (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         type TEXT NOT NULL,
-        last_heartbeat DATETIME DEFAULT CURRENT_TIMESTAMP,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        fields JSONB DEFAULT '[]',
+        last_heartbeat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `)
 
     // Device data table
-    db.run(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS device_data (
         id TEXT PRIMARY KEY,
         device_id TEXT NOT NULL,
-        pesos INTEGER,
-        coin INTEGER,
-        premios INTEGER,
-        banco INTEGER,
-        fichas INTEGER,
-        dinero INTEGER,
-        tickets INTEGER,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (device_id) REFERENCES devices (id)
+        data JSONB NOT NULL,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (device_id) REFERENCES devices (id) ON DELETE CASCADE
       )
     `)
 
     // Daily closes table
-    db.run(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS daily_closes (
         id TEXT PRIMARY KEY,
         device_id TEXT NOT NULL,
         date TEXT NOT NULL,
-        pesos INTEGER,
-        coin INTEGER,
-        premios INTEGER,
-        banco INTEGER,
-        fichas INTEGER,
-        dinero INTEGER,
-        tickets INTEGER,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (device_id) REFERENCES devices (id)
+        data JSONB NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (device_id) REFERENCES devices (id) ON DELETE CASCADE
       )
     `)
 
     // Create default admin user
     const hashedPassword = bcrypt.hashSync('admin123', 10)
-    db.run(
-      'INSERT OR IGNORE INTO users (id, username, password) VALUES (?, ?, ?)',
-      ['admin', 'admin', hashedPassword]
-    )
+    await client.query(`
+      INSERT INTO users (id, username, password) 
+      VALUES ($1, $2, $3) 
+      ON CONFLICT (username) DO NOTHING
+    `, ['admin', 'admin', hashedPassword])
 
     // Create sample devices
     const sampleDevices = [
-      { id: 'ESP32_001', name: 'Máquina 1', type: 'grua' },
-      { id: 'ESP32_002', name: 'Máquina 2', type: 'grua' },
-      { id: 'ESP32_003', name: 'Máquina 3', type: 'grua' },
-      { id: 'ESP32_004', name: 'Máquina 4', type: 'grua' },
-      { id: 'ESP32_005', name: 'Máquina 5', type: 'grua' },
-      { id: 'EXPENDEDORA_1', name: 'Expendedora 1', type: 'expendedora' },
-      { id: 'EXPENDEDORA_2', name: 'Expendedora 2', type: 'expendedora' },
-      { id: 'Videojuego_1', name: 'Videojuego 1', type: 'videojuego' },
-      { id: 'Videojuego_2', name: 'Videojuego 2', type: 'videojuego' },
-      { id: 'Ticket_1', name: 'Ticketera 1', type: 'ticketera' },
-      { id: 'Ticket_2', name: 'Ticketera 2', type: 'ticketera' },
+      { 
+        id: 'ESP32_001', 
+        name: 'Máquina 1', 
+        type: 'grua',
+        fields: [
+          { id: '1', name: 'Pesos', key: 'pesos', type: 'number', required: true },
+          { id: '2', name: 'Coin', key: 'coin', type: 'number', required: true },
+          { id: '3', name: 'Premios', key: 'premios', type: 'number', required: true },
+          { id: '4', name: 'Banco', key: 'banco', type: 'number', required: true },
+        ]
+      },
+      { 
+        id: 'ESP32_002', 
+        name: 'Máquina 2', 
+        type: 'grua',
+        fields: [
+          { id: '1', name: 'Pesos', key: 'pesos', type: 'number', required: true },
+          { id: '2', name: 'Coin', key: 'coin', type: 'number', required: true },
+          { id: '3', name: 'Premios', key: 'premios', type: 'number', required: true },
+          { id: '4', name: 'Banco', key: 'banco', type: 'number', required: true },
+        ]
+      },
+      { 
+        id: 'EXPENDEDORA_1', 
+        name: 'Expendedora 1', 
+        type: 'expendedora',
+        fields: [
+          { id: '1', name: 'Fichas', key: 'fichas', type: 'number', required: true },
+          { id: '2', name: 'Dinero', key: 'dinero', type: 'number', required: true },
+        ]
+      },
+      { 
+        id: 'Videojuego_1', 
+        name: 'Videojuego 1', 
+        type: 'videojuego',
+        fields: [
+          { id: '1', name: 'Coin', key: 'coin', type: 'number', required: true },
+        ]
+      },
+      { 
+        id: 'Ticket_1', 
+        name: 'Ticketera 1', 
+        type: 'ticketera',
+        fields: [
+          { id: '1', name: 'Coin', key: 'coin', type: 'number', required: true },
+          { id: '2', name: 'Tickets', key: 'tickets', type: 'number', required: true },
+        ]
+      },
     ]
 
-    sampleDevices.forEach(device => {
-      db.run(
-        'INSERT OR IGNORE INTO devices (id, name, type) VALUES (?, ?, ?)',
-        [device.id, device.name, device.type]
-      )
-    })
-  })
+    for (const device of sampleDevices) {
+      await client.query(`
+        INSERT INTO devices (id, name, type, fields) 
+        VALUES ($1, $2, $3, $4) 
+        ON CONFLICT (id) DO NOTHING
+      `, [device.id, device.name, device.type, JSON.stringify(device.fields)])
+    }
+
+    await client.query('COMMIT')
+    console.log('Database tables created successfully')
+  } catch (error) {
+    await client.query('ROLLBACK')
+    console.error('Error creating tables:', error)
+  } finally {
+    client.release()
+  }
 }
 
-export function getDatabase(): Database {
-  return db
+export function getDatabase(): Pool {
+  return pool
 }
