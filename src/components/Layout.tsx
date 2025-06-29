@@ -40,7 +40,7 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Mobile sidebar backdrop */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -58,11 +58,11 @@ export default function Layout({ children }: LayoutProps) {
       <motion.div
         initial={false}
         animate={{ x: sidebarOpen ? 0 : '-100%' }}
-        className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-large lg:translate-x-0 lg:static lg:inset-0"
+        className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-large lg:translate-x-0 lg:static lg:inset-0 lg:flex lg:flex-col"
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex h-16 items-center justify-between px-6 border-b border-gray-200">
+          <div className="flex h-16 items-center justify-between px-6 border-b border-gray-200 flex-shrink-0">
             <div className="flex items-center">
               <Activity className="h-8 w-8 text-primary-600" />
               <span className="ml-2 text-xl font-bold text-gray-900">
@@ -78,7 +78,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
             {navigation.map((item) => {
               const Icon = item.icon
               const active = isActive(item.href)
@@ -100,7 +100,7 @@ export default function Layout({ children }: LayoutProps) {
           </nav>
 
           {/* User section */}
-          <div className="border-t border-gray-200 p-4">
+          <div className="border-t border-gray-200 p-4 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
@@ -126,9 +126,9 @@ export default function Layout({ children }: LayoutProps) {
       </motion.div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
-        {/* Top bar */}
-        <div className="sticky top-0 z-30 bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8">
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top bar - Always visible */}
+        <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 flex-shrink-0">
           <div className="flex h-16 items-center justify-between">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -137,7 +137,7 @@ export default function Layout({ children }: LayoutProps) {
               <Menu className="h-5 w-5" />
             </button>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 ml-auto">
               <Link
                 to="/devices/new"
                 className="btn btn-primary"
@@ -150,7 +150,7 @@ export default function Layout({ children }: LayoutProps) {
         </div>
 
         {/* Page content */}
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

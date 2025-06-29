@@ -15,18 +15,20 @@ function App() {
   }
 
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/devices" element={<DeviceManagerPage />} />
-        <Route path="/devices/new" element={<DeviceManagerPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
-        <Route path="/reports/:deviceId" element={<ReportsPage />} />
-        <Route path="/reports" element={<ReportsPage />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </Layout>
+    <div className="h-screen flex flex-col">
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/devices" element={<DeviceManagerPage />} />
+          <Route path="/devices/new" element={<DeviceManagerPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/reports/:deviceId" element={<ReportsPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Layout>
+    </div>
   )
 }
 
