@@ -10,6 +10,7 @@ Características principales:
 - Watchdog timer para prevenir cuelgues
 - Escrituras inteligentes a EEPROM (solo cuando hay cambios)
 - Código más legible y documentado
+- Compatible con ESP32 Arduino Core v2.x y v3.x
 */
 
 #include <Arduino.h>
@@ -19,7 +20,12 @@ Características principales:
 #include <EEPROM.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include <esp_task_wdt.h>
+
+// Incluir watchdog solo si está disponible
+#if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 2
+  #include <esp_task_wdt.h>
+  #define WATCHDOG_AVAILABLE
+#endif
 
 // ==================== CONFIGURACIÓN ====================
 struct Config {
@@ -57,7 +63,7 @@ struct Config {
     static constexpr unsigned long HEARTBEAT_INTERVAL = 60000;  // 1 minuto
     static constexpr unsigned long DATA_SEND_INTERVAL = 30000;  // 30 segundos
     static constexpr unsigned long WIFI_RECONNECT_INTERVAL = 30000;  // 30 segundos
-    static constexpr unsigned long WATCHDOG_TIMEOUT = 30000;  // 30 segundos
+    static constexpr unsigned long WATCHDOG_TIMEOUT = 30;  // 30 segundos
     static constexpr unsigned long EEPROM_SAVE_INTERVAL = 10000;  // 10 segundos
     
     // Configuración de la máquina
@@ -88,11 +94,39 @@ struct EEPROMAddresses {
     static constexpr int CHECKSUM = 48;        // 4 bytes
 };
 
+// ==================== FUNCIONES DE WATCHDOG ====================
+void initWatchdog() {
+#ifdef WATCHDOG_AVAILABLE
+    #if ESP_ARDUINO_VERSION >= ESP_ARDUINO_VERSION_VAL(3, 0, 0)
+        // ESP32 Arduino Core 3.x
+        esp_task_wdt_config_t wdt_config = {
+            .timeout_ms = Config::WATCHDOG_TIMEOUT * 1000,
+            .idle_core_mask = (1 << portNUM_PROCESSORS) - 1,
+            .trigger_panic = true
+        };
+        esp_task_wdt_init(&wdt_config);
+    #else
+        // ESP32 Arduino Core 2.x
+        esp_task_wdt_init(Config::WATCHDOG_TIMEOUT, true);
+    #endif
+    esp_task_wdt_add(NULL);
+    Serial.println("Watchdog inicializado");
+#else
+    Serial.println("Watchdog no disponible en esta versión");
+#endif
+}
+
+void resetWatchdog() {
+#ifdef WATCHDOG_AVAILABLE
+    esp_task_wdt_reset();
+#endif
+}
+
 // ==================== CLASES Y ESTRUCTURAS ====================
 
 class EEPROMManager {
 private:
-    static constexpr int INIT_VALUE = 0x12345678;  // Valor mágico para verificar inicialización
+    static constexpr uint32_t INIT_VALUE = 0x12345678;  // Valor mágico para verificar inicialización
     
     uint32_t calculateChecksum() {
         uint32_t checksum = 0;
@@ -137,17 +171,17 @@ public:
     
     void setDefaults() {
         EEPROM.put(EEPROMAddresses::INIT_FLAG, INIT_VALUE);
-        EEPROM.put(EEPROMAddresses::COIN, 0);
-        EEPROM.put(EEPROMAddresses::CONTSALIDA, 0);
-        EEPROM.put(EEPROMAddresses::BANK, 0);
-        EEPROM.put(EEPROMAddresses::PAGO, 12);
-        EEPROM.put(EEPROMAddresses::TIEMPO, 2000);
-        EEPROM.put(EEPROMAddresses::FUERZA, 50);
-        EEPROM.put(EEPROMAddresses::PJFIJO, 0);
-        EEPROM.put(EEPROMAddresses::PPFIJO, 0);
-        EEPROM.put(EEPROMAddresses::BARRERAAUX2, 0);
-        EEPROM.put(EEPROMAddresses::GRUADISPLAY, 0);
-        EEPROM.put(EEPROMAddresses::TIEMPO5, 0);
+        EEPROM.put(EEPROMAddresses::COIN, (uint32_t)0);
+        EEPROM.put(EEPROMAddresses::CONTSALIDA, (uint32_t)0);
+        EEPROM.put(EEPROMAddresses::BANK, (int32_t)0);
+        EEPROM.put(EEPROMAddresses::PAGO, (int32_t)12);
+        EEPROM.put(EEPROMAddresses::TIEMPO, (int32_t)2000);
+        EEPROM.put(EEPROMAddresses::FUERZA, (int32_t)50);
+        EEPROM.put(EEPROMAddresses::PJFIJO, (uint32_t)0);
+        EEPROM.put(EEPROMAddresses::PPFIJO, (uint32_t)0);
+        EEPROM.put(EEPROMAddresses::BARRERAAUX2, (int32_t)0);
+        EEPROM.put(EEPROMAddresses::GRUADISPLAY, (int32_t)0);
+        EEPROM.put(EEPROMAddresses::TIEMPO5, (int32_t)0);
         updateChecksum();
         EEPROM.commit();
     }
@@ -170,11 +204,11 @@ public:
     }
     
     void resetCounters() {
-        EEPROM.put(EEPROMAddresses::COIN, 0);
-        EEPROM.put(EEPROMAddresses::CONTSALIDA, 0);
-        EEPROM.put(EEPROMAddresses::BANK, 0);
-        EEPROM.put(EEPROMAddresses::PJFIJO, 0);
-        EEPROM.put(EEPROMAddresses::PPFIJO, 0);
+        EEPROM.put(EEPROMAddresses::COIN, (uint32_t)0);
+        EEPROM.put(EEPROMAddresses::CONTSALIDA, (uint32_t)0);
+        EEPROM.put(EEPROMAddresses::BANK, (int32_t)0);
+        EEPROM.put(EEPROMAddresses::PJFIJO, (uint32_t)0);
+        EEPROM.put(EEPROMAddresses::PPFIJO, (uint32_t)0);
         commit();
     }
 };
@@ -198,7 +232,7 @@ public:
             delay(1000);
             Serial.print(".");
             attempts++;
-            esp_task_wdt_reset(); // Reset watchdog
+            resetWatchdog(); // Reset watchdog
         }
         
         if (WiFi.status() == WL_CONNECTED) {
@@ -322,18 +356,18 @@ public:
     }
     
     void loadFromEEPROM() {
-        counters.coin = eepromManager->read<unsigned int>(EEPROMAddresses::COIN);
-        counters.contsalida = eepromManager->read<unsigned int>(EEPROMAddresses::CONTSALIDA);
-        counters.bank = eepromManager->read<int>(EEPROMAddresses::BANK);
-        counters.pago = eepromManager->read<int>(EEPROMAddresses::PAGO);
-        counters.pjfijo = eepromManager->read<unsigned int>(EEPROMAddresses::PJFIJO);
-        counters.ppfijo = eepromManager->read<unsigned int>(EEPROMAddresses::PPFIJO);
+        counters.coin = eepromManager->read<uint32_t>(EEPROMAddresses::COIN);
+        counters.contsalida = eepromManager->read<uint32_t>(EEPROMAddresses::CONTSALIDA);
+        counters.bank = eepromManager->read<int32_t>(EEPROMAddresses::BANK);
+        counters.pago = eepromManager->read<int32_t>(EEPROMAddresses::PAGO);
+        counters.pjfijo = eepromManager->read<uint32_t>(EEPROMAddresses::PJFIJO);
+        counters.ppfijo = eepromManager->read<uint32_t>(EEPROMAddresses::PPFIJO);
         
-        settings.tiempo = eepromManager->read<int>(EEPROMAddresses::TIEMPO);
-        settings.fuerza = eepromManager->read<int>(EEPROMAddresses::FUERZA);
-        settings.tiempo5 = eepromManager->read<int>(EEPROMAddresses::TIEMPO5);
-        settings.barreraaux2 = eepromManager->read<int>(EEPROMAddresses::BARRERAAUX2);
-        settings.gruadisplay = eepromManager->read<int>(EEPROMAddresses::GRUADISPLAY);
+        settings.tiempo = eepromManager->read<int32_t>(EEPROMAddresses::TIEMPO);
+        settings.fuerza = eepromManager->read<int32_t>(EEPROMAddresses::FUERZA);
+        settings.tiempo5 = eepromManager->read<int32_t>(EEPROMAddresses::TIEMPO5);
+        settings.barreraaux2 = eepromManager->read<int32_t>(EEPROMAddresses::BARRERAAUX2);
+        settings.gruadisplay = eepromManager->read<int32_t>(EEPROMAddresses::GRUADISPLAY);
     }
     
     bool hasChanges() {
@@ -359,18 +393,18 @@ public:
     }
     
     void saveToEEPROM() {
-        eepromManager->write(EEPROMAddresses::COIN, counters.coin);
-        eepromManager->write(EEPROMAddresses::CONTSALIDA, counters.contsalida);
-        eepromManager->write(EEPROMAddresses::BANK, counters.bank);
-        eepromManager->write(EEPROMAddresses::PAGO, counters.pago);
-        eepromManager->write(EEPROMAddresses::PJFIJO, counters.pjfijo);
-        eepromManager->write(EEPROMAddresses::PPFIJO, counters.ppfijo);
+        eepromManager->write(EEPROMAddresses::COIN, (uint32_t)counters.coin);
+        eepromManager->write(EEPROMAddresses::CONTSALIDA, (uint32_t)counters.contsalida);
+        eepromManager->write(EEPROMAddresses::BANK, (int32_t)counters.bank);
+        eepromManager->write(EEPROMAddresses::PAGO, (int32_t)counters.pago);
+        eepromManager->write(EEPROMAddresses::PJFIJO, (uint32_t)counters.pjfijo);
+        eepromManager->write(EEPROMAddresses::PPFIJO, (uint32_t)counters.ppfijo);
         
-        eepromManager->write(EEPROMAddresses::TIEMPO, settings.tiempo);
-        eepromManager->write(EEPROMAddresses::FUERZA, settings.fuerza);
-        eepromManager->write(EEPROMAddresses::TIEMPO5, settings.tiempo5);
-        eepromManager->write(EEPROMAddresses::BARRERAAUX2, settings.barreraaux2);
-        eepromManager->write(EEPROMAddresses::GRUADISPLAY, settings.gruadisplay);
+        eepromManager->write(EEPROMAddresses::TIEMPO, (int32_t)settings.tiempo);
+        eepromManager->write(EEPROMAddresses::FUERZA, (int32_t)settings.fuerza);
+        eepromManager->write(EEPROMAddresses::TIEMPO5, (int32_t)settings.tiempo5);
+        eepromManager->write(EEPROMAddresses::BARRERAAUX2, (int32_t)settings.barreraaux2);
+        eepromManager->write(EEPROMAddresses::GRUADISPLAY, (int32_t)settings.gruadisplay);
         
         eepromManager->commit();
         
@@ -590,8 +624,7 @@ void setup() {
     Serial.println("=== ESP32 Grúa Controller v2.0 EEPROM ===");
     
     // Configurar watchdog
-    esp_task_wdt_init(Config::WATCHDOG_TIMEOUT / 1000, true);
-    esp_task_wdt_add(NULL);
+    initWatchdog();
     
     // Inicializar EEPROM
     if (!eepromManager.initialize()) {
@@ -635,7 +668,7 @@ void setup() {
 }
 
 void loop() {
-    esp_task_wdt_reset(); // Reset watchdog
+    resetWatchdog(); // Reset watchdog
     
     // Manejar reconexión WiFi
     wifiManager.handleReconnection();
@@ -762,7 +795,7 @@ void handleGameLogic() {
         handleBarrierCheck();
         
         delay(1);
-        esp_task_wdt_reset(); // Reset watchdog en el loop
+        resetWatchdog(); // Reset watchdog en el loop
     }
     
     // Procesar juego
@@ -847,7 +880,7 @@ void executeProgressiveRelease(int baseForce) {
         currentForce -= forceDecrement;
         analogWrite(Config::PIN_SPINZA, (int)currentForce);
         delay(timeStep);
-        esp_task_wdt_reset(); // Reset watchdog
+        resetWatchdog(); // Reset watchdog
     }
     
     // Ajuste final
@@ -896,7 +929,7 @@ void waitForPinzaReturn() {
                 break;
             }
             
-            esp_task_wdt_reset(); // Reset watchdog
+            resetWatchdog(); // Reset watchdog
         }
     }
 }
@@ -1033,7 +1066,7 @@ void programResetCounters() {
             displayManager.showMessage("BORRA CONTADORES", "NO");
             delay(500);
         }
-        esp_task_wdt_reset();
+        resetWatchdog();
     }
     
     if (resetCounters) {
@@ -1059,7 +1092,7 @@ void programDisplayMode() {
             displayManager.showMessage("Display Modo", "Coin");
             delay(200);
         }
-        esp_task_wdt_reset();
+        resetWatchdog();
     }
 }
 
@@ -1079,7 +1112,7 @@ void programPayment() {
             machineData.counters.pago--;
             delay(400);
         }
-        esp_task_wdt_reset();
+        resetWatchdog();
     }
 }
 
@@ -1097,7 +1130,7 @@ void programTiming() {
         if (digitalRead(Config::PIN_DATO10) == LOW && machineData.settings.tiempo > 500) {
             machineData.settings.tiempo -= 10;
         }
-        esp_task_wdt_reset();
+        resetWatchdog();
     }
 }
 
@@ -1115,7 +1148,7 @@ void programStrongForceTime() {
         if (digitalRead(Config::PIN_DATO10) == LOW && machineData.settings.tiempo5 > 0) {
             machineData.settings.tiempo5 -= 10;
         }
-        esp_task_wdt_reset();
+        resetWatchdog();
     }
 }
 
@@ -1133,7 +1166,7 @@ void programForce() {
         if (digitalRead(Config::PIN_DATO10) == LOW && machineData.settings.fuerza > 5) {
             machineData.settings.fuerza--;
         }
-        esp_task_wdt_reset();
+        resetWatchdog();
     }
 }
 
@@ -1153,7 +1186,7 @@ void programBarrierType() {
             displayManager.showMessage("TIPO BARRERA", "ULTRASONIDO");
             delay(200);
         }
-        esp_task_wdt_reset();
+        resetWatchdog();
     }
 }
 
@@ -1178,7 +1211,7 @@ void testBarrier() {
             delay(1000);
         }
         
-        esp_task_wdt_reset();
+        resetWatchdog();
         delay(100);
     }
 }
