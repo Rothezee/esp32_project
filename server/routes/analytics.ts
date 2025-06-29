@@ -1,30 +1,29 @@
 import { Router } from 'express'
-import { getDatabase } from '../database'
+import { dbAll } from '../database'
 
 const router = Router()
 
 router.get('/', async (req, res) => {
   try {
     const { deviceId, period = '7d' } = req.query
-    const db = getDatabase()
 
     // Calculate date range based on period
     let dateFilter = ''
     switch (period) {
       case '24h':
-        dateFilter = "timestamp >= NOW() - INTERVAL '24 hours'"
+        dateFilter = "timestamp >= datetime('now', '-1 day')"
         break
       case '7d':
-        dateFilter = "timestamp >= NOW() - INTERVAL '7 days'"
+        dateFilter = "timestamp >= datetime('now', '-7 days')"
         break
       case '30d':
-        dateFilter = "timestamp >= NOW() - INTERVAL '30 days'"
+        dateFilter = "timestamp >= datetime('now', '-30 days')"
         break
       case '90d':
-        dateFilter = "timestamp >= NOW() - INTERVAL '90 days'"
+        dateFilter = "timestamp >= datetime('now', '-90 days')"
         break
       default:
-        dateFilter = "timestamp >= NOW() - INTERVAL '7 days'"
+        dateFilter = "timestamp >= datetime('now', '-7 days')"
     }
 
     // Base query
@@ -32,17 +31,17 @@ router.get('/', async (req, res) => {
     const params: any[] = []
 
     if (deviceId) {
-      baseQuery += ' AND device_id = $1'
+      baseQuery += ' AND device_id = ?'
       params.push(deviceId)
     }
 
     // Get total events
-    const totalEventsResult = await db.query(`
+    const totalEventsResult = await dbAll(`
       SELECT COUNT(*) as total ${baseQuery}
     `, params)
 
     // Get daily averages
-    const dailyAverageResult = await db.query(`
+    const dailyAverageResult = await dbAll(`
       SELECT 
         DATE(timestamp) as date,
         COUNT(*) as events
@@ -52,20 +51,20 @@ router.get('/', async (req, res) => {
     `, params)
 
     // Get device type distribution
-    const deviceTypeResult = await db.query(`
+    const deviceTypeResult = await dbAll(`
       SELECT 
-        d.type,
-        COUNT(DISTINCT d.id) as count
-      FROM devices d
-      GROUP BY d.type
+        type,
+        COUNT(*) as count
+      FROM devices
+      GROUP BY type
     `)
 
     // Get status distribution
-    const statusResult = await db.query(`
+    const statusResult = await dbAll(`
       SELECT 
         CASE 
-          WHEN EXTRACT(EPOCH FROM (NOW() - last_heartbeat)) <= 300 THEN 'online'
-          WHEN EXTRACT(EPOCH FROM (NOW() - last_heartbeat)) <= 3600 THEN 'offline'
+          WHEN (julianday('now') - julianday(last_heartbeat)) * 24 * 60 * 60 <= 300 THEN 'online'
+          WHEN (julianday('now') - julianday(last_heartbeat)) * 24 * 60 * 60 <= 3600 THEN 'offline'
           ELSE 'unknown'
         END as status,
         COUNT(*) as count
@@ -73,8 +72,8 @@ router.get('/', async (req, res) => {
       GROUP BY status
     `)
 
-    const totalEvents = parseInt(totalEventsResult.rows[0]?.total || '0')
-    const dailyEvents = dailyAverageResult.rows
+    const totalEvents = parseInt(totalEventsResult[0]?.total || '0')
+    const dailyEvents = dailyAverageResult
     const averageDaily = dailyEvents.length > 0 
       ? Math.round(dailyEvents.reduce((sum, day) => sum + parseInt(day.events), 0) / dailyEvents.length)
       : 0
@@ -109,9 +108,9 @@ router.get('/', async (req, res) => {
         }],
       },
       deviceTypes: {
-        labels: deviceTypeResult.rows.map(d => d.type),
+        labels: deviceTypeResult.map(d => d.type),
         datasets: [{
-          data: deviceTypeResult.rows.map(d => parseInt(d.count)),
+          data: deviceTypeResult.map(d => parseInt(d.count)),
           backgroundColor: [
             'rgba(59, 130, 246, 0.8)',
             'rgba(16, 185, 129, 0.8)',
@@ -121,9 +120,9 @@ router.get('/', async (req, res) => {
         }],
       },
       status: {
-        labels: statusResult.rows.map(d => d.status),
+        labels: statusResult.map(d => d.status),
         datasets: [{
-          data: statusResult.rows.map(d => parseInt(d.count)),
+          data: statusResult.map(d => parseInt(d.count)),
           backgroundColor: [
             'rgba(16, 185, 129, 0.8)',
             'rgba(239, 68, 68, 0.8)',
@@ -139,8 +138,8 @@ router.get('/', async (req, res) => {
       trends: {
         totalEvents,
         averageDaily,
-        deviceTypes: deviceTypeResult.rows,
-        status: statusResult.rows,
+        deviceTypes: deviceTypeResult,
+        status: statusResult,
       },
     })
   } catch (error) {

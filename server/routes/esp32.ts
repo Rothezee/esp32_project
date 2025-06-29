@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getDatabase } from '../database'
+import { dbRun } from '../database'
 import { broadcast } from '../index'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -9,14 +9,13 @@ const router = Router()
 router.post('/heartbeat', async (req, res) => {
   try {
     const { device_id } = req.body
-    const db = getDatabase()
 
     if (!device_id) {
       return res.status(400).json({ error: 'Missing device_id' })
     }
 
-    await db.query(
-      'UPDATE devices SET last_heartbeat = NOW() WHERE id = $1',
+    await dbRun(
+      'UPDATE devices SET last_heartbeat = CURRENT_TIMESTAMP WHERE id = ?',
       [device_id]
     )
 
@@ -34,7 +33,6 @@ router.post('/heartbeat', async (req, res) => {
 router.post('/data', async (req, res) => {
   try {
     const { device_id, ...data } = req.body
-    const db = getDatabase()
 
     if (!device_id) {
       return res.status(400).json({ error: 'Missing device_id' })
@@ -42,14 +40,14 @@ router.post('/data', async (req, res) => {
 
     const id = uuidv4()
     
-    await db.query(`
+    await dbRun(`
       INSERT INTO device_data (id, device_id, data) 
-      VALUES ($1, $2, $3)
+      VALUES (?, ?, ?)
     `, [id, device_id, JSON.stringify(data)])
 
     // Update device heartbeat
-    await db.query(
-      'UPDATE devices SET last_heartbeat = NOW() WHERE id = $1',
+    await dbRun(
+      'UPDATE devices SET last_heartbeat = CURRENT_TIMESTAMP WHERE id = ?',
       [device_id]
     )
 
@@ -67,7 +65,6 @@ router.post('/data', async (req, res) => {
 router.post('/expendedora/data', async (req, res) => {
   try {
     const { device_id, dato1, dato2 } = req.body
-    const db = getDatabase()
 
     if (!device_id || dato1 === undefined || dato2 === undefined) {
       return res.status(400).json({ error: 'Missing required data' })
@@ -76,14 +73,14 @@ router.post('/expendedora/data', async (req, res) => {
     const id = uuidv4()
     const data = { fichas: dato1, dinero: dato2 }
     
-    await db.query(`
+    await dbRun(`
       INSERT INTO device_data (id, device_id, data) 
-      VALUES ($1, $2, $3)
+      VALUES (?, ?, ?)
     `, [id, device_id, JSON.stringify(data)])
 
     // Update device heartbeat
-    await db.query(
-      'UPDATE devices SET last_heartbeat = NOW() WHERE id = $1',
+    await dbRun(
+      'UPDATE devices SET last_heartbeat = CURRENT_TIMESTAMP WHERE id = ?',
       [device_id]
     )
 
@@ -100,7 +97,6 @@ router.post('/expendedora/data', async (req, res) => {
 router.post('/videojuego/data', async (req, res) => {
   try {
     const { device_id, dato2 } = req.body
-    const db = getDatabase()
 
     if (!device_id || dato2 === undefined) {
       return res.status(400).json({ error: 'Missing required data' })
@@ -109,14 +105,14 @@ router.post('/videojuego/data', async (req, res) => {
     const id = uuidv4()
     const data = { coin: dato2 }
     
-    await db.query(`
+    await dbRun(`
       INSERT INTO device_data (id, device_id, data) 
-      VALUES ($1, $2, $3)
+      VALUES (?, ?, ?)
     `, [id, device_id, JSON.stringify(data)])
 
     // Update device heartbeat
-    await db.query(
-      'UPDATE devices SET last_heartbeat = NOW() WHERE id = $1',
+    await dbRun(
+      'UPDATE devices SET last_heartbeat = CURRENT_TIMESTAMP WHERE id = ?',
       [device_id]
     )
 
@@ -133,7 +129,6 @@ router.post('/videojuego/data', async (req, res) => {
 router.post('/ticketera/data', async (req, res) => {
   try {
     const { device_id, dato2, dato5 } = req.body
-    const db = getDatabase()
 
     if (!device_id || dato2 === undefined || dato5 === undefined) {
       return res.status(400).json({ error: 'Missing required data' })
@@ -142,14 +137,14 @@ router.post('/ticketera/data', async (req, res) => {
     const id = uuidv4()
     const data = { coin: dato2, tickets: dato5 }
     
-    await db.query(`
+    await dbRun(`
       INSERT INTO device_data (id, device_id, data) 
-      VALUES ($1, $2, $3)
+      VALUES (?, ?, ?)
     `, [id, device_id, JSON.stringify(data)])
 
     // Update device heartbeat
-    await db.query(
-      'UPDATE devices SET last_heartbeat = NOW() WHERE id = $1',
+    await dbRun(
+      'UPDATE devices SET last_heartbeat = CURRENT_TIMESTAMP WHERE id = ?',
       [device_id]
     )
 

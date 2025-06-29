@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getDatabase } from '../database'
+import { dbGet, dbAll, dbRun } from '../database'
 import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
 
@@ -22,53 +22,64 @@ const createDeviceSchema = z.object({
 // Get all devices
 router.get('/', async (req, res) => {
   try {
-    const db = getDatabase()
-    
-    // Get all devices with their latest data
-    const devicesResult = await db.query(`
+    // Get all devices
+    const devices = await dbAll(`
       SELECT 
-        d.id,
-        d.name,
-        d.type,
-        d.fields,
-        d.last_heartbeat,
-        d.created_at,
+        id,
+        name,
+        type,
+        fields,
+        last_heartbeat,
+        created_at,
         CASE 
-          WHEN EXTRACT(EPOCH FROM (NOW() - d.last_heartbeat)) <= 300 THEN 'online'
-          WHEN EXTRACT(EPOCH FROM (NOW() - d.last_heartbeat)) <= 3600 THEN 'offline'
+          WHEN (julianday('now') - julianday(last_heartbeat)) * 24 * 60 * 60 <= 300 THEN 'online'
+          WHEN (julianday('now') - julianday(last_heartbeat)) * 24 * 60 * 60 <= 3600 THEN 'offline'
           ELSE 'unknown'
         END as status
-      FROM devices d
-      ORDER BY d.name
+      FROM devices
+      ORDER BY name
     `)
 
-    const devices = []
+    const devicesWithData = []
     
-    for (const device of devicesResult.rows) {
+    for (const device of devices) {
       // Get latest data for each device
-      const dataResult = await db.query(`
+      const latestData = await dbGet(`
         SELECT data 
         FROM device_data 
-        WHERE device_id = $1 
+        WHERE device_id = ? 
         ORDER BY timestamp DESC 
         LIMIT 1
       `, [device.id])
 
-      const latestData = dataResult.rows[0]?.data || {}
+      let parsedData = {}
+      let parsedFields = []
 
-      devices.push({
+      try {
+        parsedData = latestData ? JSON.parse(latestData.data) : {}
+      } catch (e) {
+        parsedData = {}
+      }
+
+      try {
+        parsedFields = device.fields ? JSON.parse(device.fields) : []
+      } catch (e) {
+        parsedFields = []
+      }
+
+      devicesWithData.push({
         id: device.id,
         name: device.name,
         type: device.type,
         status: device.status,
         lastHeartbeat: device.last_heartbeat,
-        fields: device.fields || [],
-        data: latestData,
+        fields: parsedFields,
+        data: parsedData,
         createdAt: device.created_at,
       })
     }
 
-    res.json(devices)
+    res.json(devicesWithData)
   } catch (error) {
     console.error('Error fetching devices:', error)
     res.status(500).json({ error: 'Database error' })
@@ -79,7 +90,6 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const deviceData = createDeviceSchema.parse(req.body)
-    const db = getDatabase()
     
     const id = uuidv4()
     const fieldsWithIds = deviceData.fields.map(field => ({
@@ -87,9 +97,9 @@ router.post('/', async (req, res) => {
       id: uuidv4(),
     }))
 
-    await db.query(`
+    await dbRun(`
       INSERT INTO devices (id, name, type, fields) 
-      VALUES ($1, $2, $3, $4)
+      VALUES (?, ?, ?, ?)
     `, [id, deviceData.name, deviceData.type, JSON.stringify(fieldsWithIds)])
 
     res.json({ 
@@ -116,21 +126,19 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
     const deviceData = createDeviceSchema.parse(req.body)
-    const db = getDatabase()
     
     const fieldsWithIds = deviceData.fields.map(field => ({
       ...field,
       id: field.id || uuidv4(),
     }))
 
-    const result = await db.query(`
+    const result = await dbRun(`
       UPDATE devices 
-      SET name = $1, type = $2, fields = $3 
-      WHERE id = $4
-      RETURNING *
+      SET name = ?, type = ?, fields = ? 
+      WHERE id = ?
     `, [deviceData.name, deviceData.type, JSON.stringify(fieldsWithIds), id])
 
-    if (result.rows.length === 0) {
+    if (result.changes === 0) {
       return res.status(404).json({ error: 'Device not found' })
     }
 
@@ -153,11 +161,10 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const db = getDatabase()
 
-    const result = await db.query('DELETE FROM devices WHERE id = $1', [id])
+    const result = await dbRun('DELETE FROM devices WHERE id = ?', [id])
 
-    if (result.rowCount === 0) {
+    if (result.changes === 0) {
       return res.status(404).json({ error: 'Device not found' })
     }
 

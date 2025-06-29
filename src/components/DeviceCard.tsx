@@ -9,7 +9,8 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  Eye
+  Eye,
+  BarChart3
 } from 'lucide-react'
 import { Device } from '../types'
 import { clsx } from 'clsx'

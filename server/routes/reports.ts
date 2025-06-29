@@ -1,13 +1,12 @@
 import { Router } from 'express'
-import { getDatabase } from '../database'
+import { dbAll } from '../database'
 
 const router = Router()
 
 router.get('/', async (req, res) => {
   try {
     const { deviceId, startDate, endDate } = req.query
-    const db = getDatabase()
-
+    
     if (!deviceId) {
       return res.status(400).json({ error: 'Device ID is required' })
     }
@@ -19,24 +18,24 @@ router.get('/', async (req, res) => {
         data,
         timestamp
       FROM device_data 
-      WHERE device_id = $1
+      WHERE device_id = ?
     `
     const params: any[] = [deviceId]
 
     if (startDate && endDate) {
-      query += ' AND DATE(timestamp) BETWEEN $2 AND $3'
+      query += ' AND DATE(timestamp) BETWEEN ? AND ?'
       params.push(startDate, endDate)
     }
 
     query += ' ORDER BY timestamp DESC LIMIT 1000'
 
-    const result = await db.query(query, params)
+    const result = await dbAll(query, params)
 
-    const reports = result.rows.map(row => ({
+    const reports = result.map(row => ({
       id: row.id,
       deviceId: row.device_id,
       timestamp: row.timestamp,
-      data: row.data,
+      data: JSON.parse(row.data || '{}'),
     }))
 
     res.json(reports)
