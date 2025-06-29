@@ -1,11 +1,16 @@
-import { Pool } from 'pg'
+import sqlite3 from 'sqlite3'
 import bcrypt from 'bcryptjs'
+import { promisify } from 'util'
 
-let pool: Pool
+let db: sqlite3.Database
 
 export function initDatabase() {
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+  db = new sqlite3.Database('./database.db', (err) => {
+    if (err) {
+      console.error('Error opening database:', err)
+    } else {
+      console.log('Connected to SQLite database')
+    }
   })
 
   // Create tables
@@ -13,62 +18,59 @@ export function initDatabase() {
 }
 
 async function createTables() {
-  const client = await pool.connect()
+  const run = promisify(db.run.bind(db))
   
   try {
-    await client.query('BEGIN')
-
     // Users table
-    await client.query(`
+    await run(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         username TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `)
 
     // Devices table
-    await client.query(`
+    await run(`
       CREATE TABLE IF NOT EXISTS devices (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         type TEXT NOT NULL,
-        fields JSONB DEFAULT '[]',
-        last_heartbeat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        fields TEXT DEFAULT '[]',
+        last_heartbeat DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `)
 
     // Device data table
-    await client.query(`
+    await run(`
       CREATE TABLE IF NOT EXISTS device_data (
         id TEXT PRIMARY KEY,
         device_id TEXT NOT NULL,
-        data JSONB NOT NULL,
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        data TEXT NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (device_id) REFERENCES devices (id) ON DELETE CASCADE
       )
     `)
 
     // Daily closes table
-    await client.query(`
+    await run(`
       CREATE TABLE IF NOT EXISTS daily_closes (
         id TEXT PRIMARY KEY,
         device_id TEXT NOT NULL,
         date TEXT NOT NULL,
-        data JSONB NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        data TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (device_id) REFERENCES devices (id) ON DELETE CASCADE
       )
     `)
 
     // Create default admin user
     const hashedPassword = bcrypt.hashSync('admin123', 10)
-    await client.query(`
-      INSERT INTO users (id, username, password) 
-      VALUES ($1, $2, $3) 
-      ON CONFLICT (username) DO NOTHING
+    await run(`
+      INSERT OR IGNORE INTO users (id, username, password) 
+      VALUES (?, ?, ?)
     `, ['admin', 'admin', hashedPassword])
 
     // Create sample devices
@@ -124,23 +126,46 @@ async function createTables() {
     ]
 
     for (const device of sampleDevices) {
-      await client.query(`
-        INSERT INTO devices (id, name, type, fields) 
-        VALUES ($1, $2, $3, $4) 
-        ON CONFLICT (id) DO NOTHING
+      await run(`
+        INSERT OR IGNORE INTO devices (id, name, type, fields) 
+        VALUES (?, ?, ?, ?)
       `, [device.id, device.name, device.type, JSON.stringify(device.fields)])
     }
 
-    await client.query('COMMIT')
     console.log('Database tables created successfully')
   } catch (error) {
-    await client.query('ROLLBACK')
     console.error('Error creating tables:', error)
-  } finally {
-    client.release()
   }
 }
 
-export function getDatabase(): Pool {
-  return pool
+export function getDatabase(): sqlite3.Database {
+  return db
+}
+
+// Helper function to promisify database operations
+export function dbGet(query: string, params: any[] = []): Promise<any> {
+  return new Promise((resolve, reject) => {
+    db.get(query, params, (err, row) => {
+      if (err) reject(err)
+      else resolve(row)
+    })
+  })
+}
+
+export function dbAll(query: string, params: any[] = []): Promise<any[]> {
+  return new Promise((resolve, reject) => {
+    db.all(query, params, (err, rows) => {
+      if (err) reject(err)
+      else resolve(rows)
+    })
+  })
+}
+
+export function dbRun(query: string, params: any[] = []): Promise<sqlite3.RunResult> {
+  return new Promise((resolve, reject) => {
+    db.run(query, params, function(err) {
+      if (err) reject(err)
+      else resolve(this)
+    })
+  })
 }
