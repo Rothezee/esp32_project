@@ -20,12 +20,12 @@ class MercadoPagoHandler {
                 ]
             ],
             'external_reference' => $machineId,
-            'notification_url' => 'https://TU_DOMINIO/webhook.php', // cambia a tu dominio real
+            'notification_url' => 'https://maquinasbonus/webhook.php',
             'auto_return' => 'approved',
             'back_urls' => [
-                'success' => 'https://TU_DOMINIO/success.php',
-                'failure' => 'https://TU_DOMINIO/failure.php',
-                'pending' => 'https://TU_DOMINIO/pending.php'
+                'success' => 'https://maquinasbonus/success.php', //URL CUANDO EL PAGO ES EXITOSO
+                'failure' => 'https://maquinasbonus/failure.php', //URL CUANDO EL PAGO FALLA
+                'pending' => 'https://maquinasbonus/pending.php'  //URL CUANDO EL PAGO ESTA PENDIENTE
             ]
         ];
 
@@ -43,7 +43,18 @@ class MercadoPagoHandler {
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        if (curl_errno($ch)) {
+            $error_msg = curl_error($ch);
+            curl_close($ch);
+            return [
+                'success' => false,
+                'error' => 'Error de cURL: ' . $error_msg
+            ];
+        }
+
         curl_close($ch);
+
 
         if ($httpCode === 201) {
             $data = json_decode($response, true);
@@ -61,7 +72,7 @@ class MercadoPagoHandler {
         } else {
             return [
                 'success' => false,
-                'error' => 'Error creando preferencia: ' . $response
+                'error' => 'Error creando preferencia: HTTP ' . $httpCode . ' - ' . $response
             ];
         }
     }

@@ -12,14 +12,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
+// Soportar GET, POST JSON y POST form-urlencoded
+$input = [];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Intenta decodificar JSON
+    $raw = file_get_contents('php://input');
+    $input = json_decode($raw, true);
+
+    // Si no es JSON válido, usar $_POST
+    if (!is_array($input)) {
+        $input = $_POST;
+    }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $input = $_GET;
+} else {
     echo json_encode(['error' => 'Método no permitido']);
     exit;
 }
 
-$input = json_decode(file_get_contents('php://input'), true);
-
+// Validar parámetros
 if (!isset($input['amount']) || !isset($input['machine_id'])) {
     http_response_code(400);
     echo json_encode(['error' => 'Faltan parámetros requeridos']);
