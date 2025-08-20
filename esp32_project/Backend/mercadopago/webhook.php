@@ -17,21 +17,27 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $raw_input = file_get_contents('php://input');
 $input = json_decode($raw_input, true);
 
-if (!$input) {
-    $input = $_POST; // fallback
-}
-
-// Log para depuración
+// Log para depuración SIEMPRE
 file_put_contents('webhook_log.txt', date("Y-m-d H:i:s") . " - " . $raw_input . "\n", FILE_APPEND);
 
 // Validar estructura mínima
 if (!isset($input['type']) || !isset($input['data']['id'])) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Datos inválidos']);
+    http_response_code(200); // responder igual 200
+    echo json_encode(['status' => 'ignored', 'message' => 'Notificación sin datos válidos']);
     exit;
 }
 
-if ($input['type'] === 'payment') {
+$type = $input['type'];
+$paymentId = $input['data']['id'];
+
+// 🔹 Si es notificación de PRUEBA (ej: desde el panel)
+if ($paymentId === "123456" || strpos($paymentId, "test") !== false) {
+    http_response_code(200);
+    echo json_encode(['status' => 'ok', 'message' => 'Notificación de prueba recibida']);
+    exit;
+}
+
+if ($type === 'payment') {
     try {
         $db = new Database();
         $conn = $db->getConnection();
@@ -39,7 +45,6 @@ if ($input['type'] === 'payment') {
         $mp = new MercadoPagoHandler($conn);
         $esp32 = new ESP32Communication($conn);
 
-        $paymentId = $input['data']['id'];
         $paymentInfo = $mp->getPaymentInfo($paymentId);
 
         if (isset($paymentInfo['status']) && $paymentInfo['status'] === 'approved') {
@@ -58,14 +63,17 @@ if ($input['type'] === 'payment') {
             // Enviar crédito al ESP32
             $result = $esp32->sendCreditToMachine($machineId, $amount);
 
+            http_response_code(200);
             echo json_encode($result);
         } else {
-            echo json_encode(['status' => 'pending', 'message' => 'Pago no aprobado']);
+            http_response_code(200);
+            echo json_encode(['status' => 'pending', 'message' => 'Pago no aprobado aún']);
         }
     } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Error procesando webhook', 'details' => $e->getMessage()]);
+        http_response_code(200); // devolver 200 siempre
+        echo json_encode(['error' => 'Excepción en webhook', 'details' => $e->getMessage()]);
     }
 } else {
-    echo json_encode(['status' => 'ignored', 'message' => 'Tipo de evento no manejado']);
+    http_response_code(200);
+    echo json_encode(['status' => 'ignored', 'message' => 'Evento no manejado']);
 }
