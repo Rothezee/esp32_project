@@ -50,8 +50,13 @@ if ($amount <= 0) {
 
 try {
     $db = new Database();
-    $mp = new MercadoPagoHandler($db->getConnection());
+    $conn = $db->getConnection();
 
+    // Ajustar zona horaria en DB y PHP
+    $conn->exec("SET time_zone = '-03:00'");
+    date_default_timezone_set('America/Argentina/Buenos_Aires');
+
+    $mp = new MercadoPagoHandler($conn);
     $result = $mp->createPayment($amount, $machineId, $description);
 
     if ($result['success']) {
@@ -62,5 +67,8 @@ try {
     }
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['error' => 'Error interno del servidor']);
+    echo json_encode([
+        'error' => 'Error interno del servidor',
+        'details' => $e->getMessage()
+    ]);
 }
