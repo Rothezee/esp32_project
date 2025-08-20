@@ -1,12 +1,18 @@
 <?php
 require_once 'config.php';
+
 class MercadoPagoHandler {
     private $accessToken;
     private $db;
+
     public function __construct($db) {
-        $this->accessToken = Config::MP_ACCESS_TOKEN;
+        $this->accessToken = Config::MP_ACCESS_TOKEN; // Token de la cuenta vendedora
         $this->db = $db;
     }
+
+    /**
+     * Crea una preferencia de pago en Mercado Pago
+     */
     public function createPayment($amount, $machineId, $description = '') {
         $url = 'https://api.mercadopago.com/checkout/preferences';
 
@@ -20,12 +26,13 @@ class MercadoPagoHandler {
                 ]
             ],
             'external_reference' => $machineId,
-            'notification_url' => 'https://maquinasbonus/webhook.php',
+            // Donde MP avisa el estado real del pago
+            'notification_url' => 'https://maquinasbonus.com/esp32_project/mercadopago/webhook.php',
             'auto_return' => 'approved',
             'back_urls' => [
-                'success' => 'https://maquinasbonus/success.php', //URL CUANDO EL PAGO ES EXITOSO
-                'failure' => 'https://maquinasbonus/failure.php', //URL CUANDO EL PAGO FALLA
-                'pending' => 'https://maquinasbonus/pending.php'  //URL CUANDO EL PAGO ESTA PENDIENTE
+                'success' => 'https://maquinasbonus.com/esp32_project/mercadopago/success.php',
+                'failure' => 'https://maquinasbonus.com/esp32_project/mercadopago/failure.php',
+                'pending' => 'https://maquinasbonus.com/esp32_project/mercadopago/pending.php'
             ]
         ];
 
@@ -55,36 +62,42 @@ class MercadoPagoHandler {
 
         curl_close($ch);
 
-
         if ($httpCode === 201) {
             $data = json_decode($response, true);
 
-            // Guardar en base de datos
+            // Guardar el intento en DB
             $this->savePaymentRequest($data['id'], $machineId, $amount);
 
             return [
                 'success' => true,
                 'preference_id' => $data['id'],
-                'init_point' => $data['init_point'],
-                'qr_code' => isset($data['qr_code']) ? $data['qr_code'] : null,
-                'qr_code_base64' => isset($data['qr_code_base64']) ? $data['qr_code_base64'] : null
+                // ⚡ usar sandbox_init_point en pruebas
+                'init_point' => $data['sandbox_init_point'],
+                'qr_code' => $data['qr_code'] ?? null,
+                'qr_code_base64' => $data['qr_code_base64'] ?? null
             ];
         } else {
             return [
                 'success' => false,
-                'error' => 'Error creando preferencia: HTTP ' . $httpCode . ' - ' . $response
+                'error' => "Error creando preferencia: HTTP $httpCode - $response"
             ];
         }
     }
 
+    /**
+     * Guarda el pago pendiente en DB
+     */
     private function savePaymentRequest($preferenceId, $machineId, $amount) {
         $stmt = $this->db->prepare("
-            INSERT INTO mercadopago_requests (preference_id, machine_id, amount, status, created_at) 
+            INSERT INTO mercadopago_requests (preference_id, machine_id, amount, status, created_at)
             VALUES (?, ?, ?, 'pending', NOW())
         ");
         $stmt->execute([$preferenceId, $machineId, $amount]);
     }
 
+    /**
+     * Consulta un pago por su ID
+     */
     public function getPaymentInfo($paymentId) {
         $url = "https://api.mercadopago.com/v1/payments/$paymentId";
 
