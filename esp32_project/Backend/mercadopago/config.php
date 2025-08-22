@@ -8,8 +8,9 @@ class Config {
     
     // Configuración de MercadoPago
     // IMPORTANTE: Reemplaza estos tokens con los reales de tu cuenta
-    const MP_ACCESS_TOKEN = 'TEST-1234567890-123456-abcdef1234567890abcdef1234567890-123456789'; // Token de prueba
-    const MP_PUBLIC_KEY = 'TEST-abcdef12-3456-7890-abcd-ef1234567890'; // Clave pública de prueba
+    // Para pruebas usa TEST tokens, para producción usa PROD tokens
+    const MP_ACCESS_TOKEN = 'TEST-1234567890-123456-abcdef1234567890abcdef1234567890-123456789';
+    const MP_PUBLIC_KEY = 'TEST-abcdef12-3456-7890-abcd-ef1234567890';
     
     // URLs del webhook y redirección
     const WEBHOOK_URL = 'https://maquinasbonus.com/esp32_project/Backend/mercadopago/webhook.php';
@@ -20,4 +21,11 @@ class Config {
     // Configuración general
     const CURRENCY = 'ARS';
     const TIMEZONE = 'America/Argentina/Buenos_Aires';
+    
+    // Configuración de ambiente
+    const IS_PRODUCTION = false; // Cambiar a true en producción
+    
+    // Montos mínimos y máximos
+    const MIN_AMOUNT = 1.00;
+    const MAX_AMOUNT = 10000.00;
 }
