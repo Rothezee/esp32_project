@@ -1,0 +1,66 @@
+[2025-08-22 14:12:49] Webhook recibido | {
+    "method": "POST",
+    "headers": {
+        "Host": "maquinasbonus.com",
+        "User-Agent": "MercadoPago Feed v2.0 merchant_order",
+        "Content-Length": "96",
+        "Accept": "application\/json",
+        "Connection": "keep-alive",
+        "Content-Type": "application\/json",
+        "Referer": "https:\/\/mercadopago.com.ar",
+        "Traceparent": "00-0ebc1134f042b1b6ae6ef424d743d5a2-ff0f4215d21a5078-00",
+        "X-B3-Parentspanid": "85bc910c889d0e92",
+        "X-B3-Sampled": "0",
+        "X-B3-Spanid": "ff0f4215d21a5078",
+        "X-B3-Traceid": "0ebc1134f042b1b6ae6ef424d743d5a2",
+        "X-Request-Id": "9c1592a1-f0a1-4485-942f-d04ffe9fdbee",
+        "X-Rest-Pool-Name": "pool_unknown",
+        "X-Signature": "ts=1755854987,v1=9e71601559f68f7bc1e1956ea7f8f463718ece1e8b0f346320606157c2dc79b4",
+        "X-Socket-Timeout": "25000",
+        "X-Trace-Digest-28": "0W\/TriKsLm03anuiZ71IFdmvoaqxcz73YPRHAUjBrl5ToMVTPKJbj5nDv6xEiUYwyupiwOf4KspmooDhI1\/c6Q1O30G8r3G+VMKE24qqmfnypUahNkfj9oeJ7bKry4\/AnfDy5MxKNvgVISDh\/7KKTFMEFtLSgDw0SWisixOY59k=",
+        "Accept-Encoding": "gzip"
+    },
+    "raw": "{\"resource\":\"https:\/\/api.mercadolibre.com\/merchant_orders\/33391206307\",\"topic\":\"merchant_order\"}",
+    "server": {
+        "REQUEST_URI": "\/esp32_project\/mercadopago\/webhook.php?id=33391206307&topic=merchant_order",
+        "REMOTE_ADDR": "18.206.34.84"
+    }
+}
+--------------------------------------------------------------------------------
+[2025-08-22 14:12:49] ERROR: Notificación sin datos válidos | {
+    "resource": "https:\/\/api.mercadolibre.com\/merchant_orders\/33391206307",
+    "topic": "merchant_order"
+}
+--------------------------------------------------------------------------------
+[2025-08-22 14:12:50] Webhook recibido | {
+    "method": "POST",
+    "headers": {
+        "Host": "maquinasbonus.com",
+        "User-Agent": "MercadoPago WebHook v1.0 payment",
+        "Content-Length": "188",
+        "Accept": "application\/json",
+        "Connection": "keep-alive",
+        "Content-Type": "application\/json",
+        "Referer": "https:\/\/mercadopago.com.ar",
+        "Traceparent": "00-00000000000000002241533cb117359b-e0fad6927b10c547-00",
+        "X-B3-Sampled": "0",
+        "X-B3-Spanid": "e0fad6927b10c547",
+        "X-B3-Traceid": "00000000000000002241533cb117359b",
+        "X-Request-Id": "5ce86c74-7097-4a66-8dff-fc3e8a4ce49f",
+        "X-Rest-Pool-Name": "pool_unknown",
+        "X-Signature": "ts=1755856288,v1=7483a500eba3aede5daa177055b4ceea43abb04aae5d83ce39d4a7607afb5355",
+        "X-Socket-Timeout": "25000",
+        "X-Trace-Digest-90": "xAxLWUqOfX+EZPjXjGvknhD7QOds0nbO4lqyqvKXeTLLrOcmLVNtDEykADmYvFAbaWa2nK0cTKlq4qr3Zg6bmJijB2C4IsvX0UM7zxZUR+cJZVZ\/LW1iv8e3LXj45mZt",
+        "Accept-Encoding": "gzip"
+    },
+    "raw": "{\"action\":\"payment.created\",\"api_version\":\"v1\",\"data\":{\"id\":\"1324510238\"},\"date_created\":\"2025-08-22T14:12:49Z\",\"id\":123963423409,\"live_mode\":false,\"type\":\"payment\",\"user_id\":\"2626445920\"}",
+    "server": {
+        "REQUEST_URI": "\/esp32_project\/mercadopago\/webhook.php?data.id=1324510238&type=payment",
+        "REMOTE_ADDR": "54.88.218.97"
+    }
+}
+--------------------------------------------------------------------------------
+[2025-08-22 11:12:50] ❌ Excepción en webhook | {
+    "error": "No se pudo obtener información del pago 1324510238"
+}
+--------------------------------------------------------------------------------

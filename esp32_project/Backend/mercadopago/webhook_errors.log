@@ -1,0 +1,1 @@
+[22-Aug-2025 11:12:50 America/Argentina/Buenos_Aires] Error getting payment info: HTTP 404 - {"message":"Payment not found","error":"not_found","status":404,"cause":[{"code":2000,"description":"Payment not found","data":"22-08-2025T14:12:50UTC;63a6e757-3e18-4051-9ba9-751c0adbc108"}]}
