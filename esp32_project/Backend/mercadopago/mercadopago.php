@@ -178,28 +178,52 @@ class MercadoPagoHandler {
      */
     public function processApprovedPayment($paymentId, $machineId, $amount) {
         try {
+            // Verificar si ya se procesó este pago
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) as count FROM mercadopago_requests 
+                WHERE payment_id = ? AND status = 'approved'
+            ");
+            $stmt->execute([$paymentId]);
+            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($existing['count'] > 0) {
+                return [
+                    'success' => true,
+                    'message' => 'Pago ya procesado anteriormente',
+                    'already_processed' => true
+                ];
+            }
+
             // Actualizar estado en base de datos
             $stmt = $this->db->prepare("
-                UPDATE mercadopago_requests 
-                SET status = 'approved', payment_id = ?, updated_at = NOW() 
-                WHERE machine_id = ? AND status = 'pending'
-                ORDER BY created_at DESC LIMIT 1
+                INSERT INTO mercadopago_requests (payment_id, machine_id, amount, status, created_at, updated_at)
+                VALUES (?, ?, ?, 'approved', NOW(), NOW())
+                ON DUPLICATE KEY UPDATE 
+                    status = 'approved', 
+                    updated_at = NOW()
             ");
-            $stmt->execute([$paymentId, $machineId]);
+            $stmt->execute([$paymentId, $machineId, $amount]);
 
             // Enviar crédito al ESP32
             $result = $this->esp32->sendCreditToMachine($machineId, $amount);
             
             if ($result['success']) {
-                error_log("Crédito enviado exitosamente a máquina $machineId por $amount");
+                // Registrar transacción exitosa
+                $this->logTransaction($machineId, $amount, 'success', 'Crédito enviado correctamente');
+                
+                error_log("✅ Crédito enviado exitosamente a máquina $machineId por $$amount");
                 return [
                     'success' => true,
                     'message' => 'Pago procesado y crédito enviado',
                     'machine_id' => $machineId,
-                    'amount' => $amount
+                    'amount' => $amount,
+                    'payment_id' => $paymentId
                 ];
             } else {
-                error_log("Error enviando crédito a máquina $machineId: " . $result['error']);
+                // Registrar transacción fallida
+                $this->logTransaction($machineId, $amount, 'failed', $result['error']);
+                
+                error_log("❌ Error enviando crédito a máquina $machineId: " . $result['error']);
                 return [
                     'success' => false,
                     'error' => 'Pago aprobado pero error enviando crédito: ' . $result['error']
@@ -211,6 +235,21 @@ class MercadoPagoHandler {
                 'success' => false,
                 'error' => 'Error interno procesando el pago'
             ];
+        }
+    }
+
+    /**
+     * Registra una transacción en la base de datos
+     */
+    private function logTransaction($machineId, $amount, $status, $details = '') {
+        try {
+            $stmt = $this->db->prepare("
+                INSERT INTO mercadopago_transactions (machine_id, amount, status, details, created_at) 
+                VALUES (?, ?, ?, ?, NOW())
+            ");
+            $stmt->execute([$machineId, $amount, $status, $details]);
+        } catch (Exception $e) {
+            error_log("Error logging transaction: " . $e->getMessage());
         }
     }
 

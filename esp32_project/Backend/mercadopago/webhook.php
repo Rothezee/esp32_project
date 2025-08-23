@@ -63,93 +63,172 @@ if (json_last_error() !== JSON_ERROR_NONE) {
 }
 
 // =====================================================
-// Validar estructura mínima
+// Manejar diferentes tipos de notificaciones
 // =====================================================
-if (!isset($input['type']) || !isset($input['data']['id'])) {
-    logWebhook("ERROR: Notificación sin datos válidos", $input);
-    http_response_code(200);
-    echo json_encode(['status' => 'ignored', 'message' => 'Notificación sin datos válidos']);
-    exit;
-}
+try {
+    $db = new Database();
+    $conn = $db->getConnection();
+    $conn->exec("SET time_zone = '-03:00'");
+    date_default_timezone_set(Config::TIMEZONE);
 
-$type      = $input['type'];
-$paymentId = $input['data']['id'];
+    $mp = new MercadoPagoHandler($conn);
 
-// Filtrar notificaciones de prueba
-if ($paymentId === "123456" || strpos($paymentId, "test") !== false) {
-    logWebhook("ℹ️ Notificación de prueba recibida", $input);
-    http_response_code(200);
-    echo json_encode(['status' => 'ok', 'message' => 'Notificación de prueba recibida']);
-    exit;
-}
+    // Guardar log del webhook
+    $stmt = $conn->prepare("
+        INSERT INTO mercadopago_webhook_logs (payment_id, event_type, status, raw_data, created_at) 
+        VALUES (?, ?, ?, ?, NOW())
+    ");
 
-// =====================================================
-// Procesar pagos
-// =====================================================
-if ($type === 'payment') {
-    try {
-        $db = new Database();
-        $conn = $db->getConnection();
-        $conn->exec("SET time_zone = '" . (Config::IS_PRODUCTION ? '-03:00' : '-03:00') . "'");
-        date_default_timezone_set(Config::TIMEZONE);
-
-        $mp = new MercadoPagoHandler($conn);
-
-        // Obtener información real del pago
-        $paymentInfo = $mp->getPaymentInfo($paymentId);
-        if (!$paymentInfo) {
-            throw new Exception("No se pudo obtener información del pago $paymentId");
-        }
-
-        $status    = $paymentInfo['status'] ?? 'unknown';
-        $machineId = $paymentInfo['external_reference'] ?? null;
-        $amount    = $paymentInfo['transaction_amount'] ?? 0;
-
-        logWebhook("ℹ️ Info del pago", [
-            'paymentId' => $paymentId,
-            'status'    => $status,
-            'machineId' => $machineId,
-            'amount'    => $amount
-        ]);
-
-        if ($status === 'approved') {
-            // Verificar si ya se procesó
-            $stmt = $conn->prepare("
-                SELECT COUNT(*) as count FROM mercadopago_requests 
-                WHERE payment_id = ? AND status = 'approved'
-            ");
-            $stmt->execute([$paymentId]);
-            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($existing['count'] > 0) {
-                logWebhook("ℹ️ Pago ya procesado", ['paymentId' => $paymentId]);
-                http_response_code(200);
-                echo json_encode(['status' => 'already_processed']);
-                exit;
-            }
-
-            // Procesar pago aprobado
-            $result = $mp->processApprovedPayment($paymentId, $machineId, $amount);
-            logWebhook("✅ Pago aprobado procesado", $result);
-
-            http_response_code(200);
-            echo json_encode($result);
-        } else {
-            logWebhook("⏳ Pago pendiente o rechazado", ['paymentId' => $paymentId, 'status' => $status]);
-            http_response_code(200);
-            echo json_encode(['status' => $status]);
-        }
-    } catch (Exception $e) {
-        logWebhook("❌ Excepción en webhook", ['error' => $e->getMessage()]);
+    // Caso 1: Notificación de payment
+    if (isset($input['type']) && $input['type'] === 'payment' && isset($input['data']['id'])) {
+        $paymentId = $input['data']['id'];
+        $action = $input['action'] ?? 'unknown';
+        
+        logWebhook("📧 Notificación de payment", ['paymentId' => $paymentId, 'action' => $action]);
+        
+        $stmt->execute([$paymentId, 'payment', $action, $raw_input]);
+        
+        // Intentar procesar el pago con reintentos
+        $result = processPaymentWithRetries($mp, $paymentId, 3);
+        
+        logWebhook("🔄 Resultado procesamiento payment", $result);
+        
         http_response_code(200);
-        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        echo json_encode($result);
+        exit;
     }
-    exit;
+
+    // Caso 2: Notificación de merchant_order
+    if (isset($input['topic']) && $input['topic'] === 'merchant_order' && isset($input['resource'])) {
+        $resourceUrl = $input['resource'];
+        $merchantOrderId = basename($resourceUrl);
+        
+        logWebhook("📧 Notificación de merchant_order", ['merchantOrderId' => $merchantOrderId, 'resource' => $resourceUrl]);
+        
+        $stmt->execute([$merchantOrderId, 'merchant_order', 'received', $raw_input]);
+        
+        // Procesar merchant order
+        $result = processMerchantOrder($mp, $resourceUrl);
+        
+        logWebhook("🔄 Resultado procesamiento merchant_order", $result);
+        
+        http_response_code(200);
+        echo json_encode($result);
+        exit;
+    }
+
+    // Caso 3: Notificación con parámetros GET (formato alternativo)
+    if (isset($_GET['type']) && $_GET['type'] === 'payment' && isset($_GET['data.id'])) {
+        $paymentId = $_GET['data.id'];
+        
+        logWebhook("📧 Notificación GET payment", ['paymentId' => $paymentId]);
+        
+        $stmt->execute([$paymentId, 'payment_get', 'received', json_encode($_GET)]);
+        
+        $result = processPaymentWithRetries($mp, $paymentId, 3);
+        
+        logWebhook("🔄 Resultado procesamiento GET payment", $result);
+        
+        http_response_code(200);
+        echo json_encode($result);
+        exit;
+    }
+
+    // Notificación no reconocida
+    logWebhook("⚠️ Notificación no reconocida", $input);
+    http_response_code(200);
+    echo json_encode(['status' => 'ignored', 'message' => 'Tipo de notificación no reconocida']);
+
+} catch (Exception $e) {
+    logWebhook("❌ Excepción en webhook", ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+    http_response_code(200);
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 
 // =====================================================
-// Otros eventos
+// Funciones auxiliares
 // =====================================================
-logWebhook("Evento ignorado", ['type' => $type]);
-http_response_code(200);
-echo json_encode(['status' => 'ignored']);
+
+function processPaymentWithRetries($mp, $paymentId, $maxRetries = 3) {
+    for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+        logWebhook("🔄 Intento $attempt de $maxRetries para payment $paymentId");
+        
+        $paymentInfo = $mp->getPaymentInfo($paymentId);
+        
+        if ($paymentInfo) {
+            $status = $paymentInfo['status'] ?? 'unknown';
+            $machineId = $paymentInfo['external_reference'] ?? null;
+            $amount = $paymentInfo['transaction_amount'] ?? 0;
+            
+            logWebhook("✅ Info del pago obtenida", [
+                'paymentId' => $paymentId,
+                'status' => $status,
+                'machineId' => $machineId,
+                'amount' => $amount,
+                'attempt' => $attempt
+            ]);
+            
+            if ($status === 'approved' && $machineId && $amount > 0) {
+                return $mp->processApprovedPayment($paymentId, $machineId, $amount);
+            } else {
+                return ['status' => $status, 'message' => "Pago en estado: $status"];
+            }
+        }
+        
+        if ($attempt < $maxRetries) {
+            logWebhook("⏳ Esperando antes del siguiente intento...");
+            sleep(2); // Esperar 2 segundos antes del siguiente intento
+        }
+    }
+    
+    return ['status' => 'error', 'message' => "No se pudo obtener información del pago después de $maxRetries intentos"];
+}
+
+function processMerchantOrder($mp, $resourceUrl) {
+    // Obtener información de la merchant order
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $resourceUrl);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . Config::MP_ACCESS_TOKEN,
+        'Content-Type: application/json'
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode !== 200) {
+        return ['status' => 'error', 'message' => "Error obteniendo merchant order: HTTP $httpCode"];
+    }
+    
+    $orderData = json_decode($response, true);
+    if (!$orderData) {
+        return ['status' => 'error', 'message' => 'Respuesta inválida de merchant order'];
+    }
+    
+    logWebhook("📦 Datos de merchant order", $orderData);
+    
+    // Buscar pagos aprobados en la orden
+    $payments = $orderData['payments'] ?? [];
+    foreach ($payments as $payment) {
+        if ($payment['status'] === 'approved') {
+            $paymentId = $payment['id'];
+            $machineId = $orderData['external_reference'] ?? null;
+            $amount = $payment['transaction_amount'] ?? 0;
+            
+            if ($machineId && $amount > 0) {
+                logWebhook("💰 Procesando pago aprobado desde merchant order", [
+                    'paymentId' => $paymentId,
+                    'machineId' => $machineId,
+                    'amount' => $amount
+                ]);
+                
+                return $mp->processApprovedPayment($paymentId, $machineId, $amount);
+            }
+        }
+    }
+    
+    return ['status' => 'pending', 'message' => 'No hay pagos aprobados en la orden'];
+}
