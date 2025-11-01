@@ -1,19 +1,28 @@
+const datosCargados = {
+    reportes: false,
+    diarios: false,
+    semanales: false,
+    mensuales: false,
+    graficas: false
+};
+
 let datosDiarios = [];
 let datosSemanales = [];
 let datosMensuales = [];
+let deviceId; // Variable global para el ID del dispositivo
+let allReports = []; // Almacenará todos los reportes para cálculos
 
 document.addEventListener("DOMContentLoaded", function () {
     console.log("DOM completamente cargado y parseado");
 
     const urlParams = new URLSearchParams(window.location.search);
-    const deviceId = urlParams.get('device_id');
+    deviceId = urlParams.get('device_id');
     const machineName = document.getElementById('machine_name');
 
     if (!machineName) {
         console.error("Elemento #machine_name no encontrado en el DOM.");
         return;
     }
-
     machineName.innerText = `Machine ${deviceId}`;
 
     if (!deviceId) {
@@ -21,45 +30,13 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
-    fetch(`/esp32_project/get_report.php?device_id=${deviceId}`)
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) {
-                console.error(data.error);
-            } else {
-                const reports = data.reports || [];
-                const tableBody = document.querySelector("#report_table tbody");
-
-                if (!tableBody) {
-                    console.error("Elemento #report_table tbody no encontrado en el DOM.");
-                    return;
-                }
-
-                tableBody.innerHTML = "";
-
-                reports.forEach(report => {
-                    const reportDate = new Date(report.timestamp);
-                    reportDate.setHours(reportDate.getHours() - 3);
-
-                    const reportRow = document.createElement("tr");
-                    reportRow.innerHTML = `
-                        <td>${reportDate.toLocaleString()}</td>
-                        <td>${report.dato1 ?? 'N/A'}</td>
-                        <td>${report.dato2 ?? 'N/A'}</td>
-                        <td>${report.dato3 ?? 'N/A'}</td>
-                        <td>${report.dato4 ?? 'N/A'}</td>
-                    `;
-                    tableBody.appendChild(reportRow);
-                });
-
-                calcularCierresDiarios(reports);
-                cargarTabla('tabla-diarios', datosDiarios, ['fecha', 'pesos', 'coin', 'premios', 'banco']);
-            }
-        })
-        .catch(error => console.error('Error al obtener los datos:', error));
+    // Configurar los clics del menú para usar la nueva función mostrarSeccion
+    document.querySelectorAll('.navbar-nav a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            mostrarSeccion(this.getAttribute('href').substring(1));
+        });
+    });
 
     // Inicializar el selector de inicio de semana
     flatpickr("#selector-inicio-semana", {
@@ -89,7 +66,38 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
     });
+
+    // Mostrar la sección inicial por defecto y cargar sus datos
+    mostrarSeccion('reportes');
 });
+
+function cargarReportes() {
+    if (datosCargados.reportes) return;
+
+    fetch(`/esp32_project/get_report.php?device_id=${deviceId}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                console.error(data.error);
+                return;
+            }
+            allReports = data.reports || [];
+            const reversedReports = [...allReports].reverse();
+            cargarTabla('report_table', reversedReports, ['timestamp', 'dato1', 'dato2', 'dato3', 'dato4']);
+            datosCargados.reportes = true;
+        })
+        .catch(error => console.error('Error al obtener los datos de reportes:', error));
+}
+
+function cargarCierresDiarios() {
+    if (datosCargados.diarios || allReports.length === 0) return;
+    calcularCierresDiarios(allReports);
+    cargarTabla('tabla-diarios', datosDiarios, ['fecha', 'pesos', 'coin', 'premios', 'banco']);
+    datosCargados.diarios = true;
+}
 
 function calcularCierresDiarios(reports) {
     const cierresPorDia = {};
@@ -295,19 +303,34 @@ function cargarTabla(idTabla, datos, columnas) {
     });
 }
 
-function mostrarSeccion(seccion) {
+function mostrarSeccion(seccionId) {
+    // Ocultar todas las secciones y quitar la clase 'active' de los links del menú
     const secciones = document.querySelectorAll(".seccion");
     secciones.forEach((s) => s.classList.remove("active"));
-    document.getElementById(seccion).classList.add("active");
+    document.querySelectorAll('.navbar-nav li').forEach(li => li.classList.remove('active'));
 
-    if (seccion === 'graficas' && !graficasCargadas.comparativa) {
-        generarGraficaDiarias(datosDiarios);
-        generarGraficaSemanales(datosSemanales);
-        generarGraficaMensuales(datosMensuales);
-        generarGraficaComparativa(datosMensuales);
-        graficasCargadas.comparativa = true;
+    // Mostrar la sección activa y marcar el link del menú como activo
+    const seccionActiva = document.getElementById(seccionId);
+    if (seccionActiva) {
+        seccionActiva.classList.add("active");
+        const linkActivo = document.querySelector(`a[href="#${seccionId}"]`);
+        if (linkActivo) {
+            linkActivo.parentElement.classList.add('active');
+        }
+
+        // Cargar los datos correspondientes a la sección si no se han cargado
+        if (seccionId === 'reportes') {
+            cargarReportes();
+        } else if (seccionId === 'diarios') {
+            cargarCierresDiarios();
+        }
+        // Las cargas semanales y mensuales se activan con el selector de fecha
+    } else {
+        console.error(`Sección con id ${seccionId} no encontrada.`);
     }
 }
+
+let graficasCargadas = { comparativa: false }; // Para mantener consistencia con el código original
 
 function generarGraficaDiarias(datos) {
     const ctx = document.getElementById('grafica-ganancias-diarias').getContext('2d');

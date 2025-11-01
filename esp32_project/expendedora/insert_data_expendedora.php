@@ -19,7 +19,10 @@ $dato3 = 0; // Valor predeterminado
 $dato4 = 0; // Valor predeterminado
 $dato5 = 0; // Valor predeterminado
 
-// Insertar datos para máquinas de grúa
+// Iniciar una transacción para asegurar que ambas operaciones (insertar y actualizar) se completen
+$conn->begin_transaction();
+
+// Insertar datos genéricos de dispositivo (usado por expendedora, grúas, etc.)
 $sql = "INSERT INTO datos (device_id, dato1, dato2, dato3, dato4, dato5) VALUES (?, ?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
@@ -28,6 +31,10 @@ if (!$stmt) {
     $conn->close();
     exit();
 }
+// Se usa "siiiii" para los tipos de datos, ya que el dinero se maneja como entero:
+// s: string (device_id)
+// i: integer (dato1 - fichas)
+// i: integer (dato2 - dinero)
 $stmt->bind_param("siiiii", $device_id, $dato1, $dato2, $dato3, $dato4, $dato5);
 
 if ($stmt->execute()) {
@@ -36,20 +43,25 @@ if ($stmt->execute()) {
     $update_stmt = $conn->prepare($update_sql);
     if (!$update_stmt) {
         error_log("Update prepare failed: " . $conn->error);
+        $conn->rollback(); // Revertir la transacción
         echo json_encode(["error" => "Update prepare failed"]);
         $conn->close();
         exit();
     }
     $update_stmt->bind_param("s", $device_id);
     if ($update_stmt->execute()) {
+        // Ambas operaciones tuvieron éxito, confirmar la transacción
+        $conn->commit();
         echo json_encode(["success" => "Data inserted successfully"]);
     } else {
         error_log("Update execute failed: " . $update_stmt->error);
+        $conn->rollback(); // Revertir la transacción
         echo json_encode(["error" => "Error updating last_heartbeat"]);
     }
     $update_stmt->close();
 } else {
     error_log("Execute failed: " . $stmt->error);
+    $conn->rollback(); // Revertir la transacción
     echo json_encode(["error" => "Error inserting data"]);
 }
 

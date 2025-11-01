@@ -1,70 +1,25 @@
-document.addEventListener("DOMContentLoaded", function() {
-    console.log("DOM completamente cargado y parseado"); // Depuración para confirmar que el DOM está listo
+const datosCargados = {
+    reportes: false,
+    diarios: false,
+    semanales: false,
+    mensuales: false,
+    graficas: false
+};
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const deviceId = urlParams.get('device_id');
-    const machineName = document.getElementById('machine_name');
-
-    if (!machineName) {
-        console.error("Elemento #machine_name no encontrado en el DOM.");
-        return;
-    }
-
-    machineName.innerText = `Machine ${deviceId}`;
-
-    // Obtener reportes y cierres diarios
-    fetch(`/esp32_project/get_report.php?device_id=${deviceId}`)
-        .then(response => {
-            console.log('Respuesta de fetch:', response);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json(); 
-        })
-        .then(data => {
-            console.log("Datos recibidos:", data); // Verificar los datos
-
-            if (data.error) {
-                console.error(data.error);
-            } else {
-                const reports = data.reports || [];
-                const tableBody = document.querySelector("#report_table tbody");
-                
-                if (!tableBody) {
-                    console.error("Elemento #report_table tbody no encontrado en el DOM.");
-                    return;
-                }
-
-                tableBody.innerHTML = ""; 
-
-                reports.forEach(report => {
-                    const reportDate = new Date(report.timestamp);
-                    reportDate.setHours(reportDate.getHours() - 3); // Ajustar si es necesario
-
-                    const reportRow = document.createElement("tr");
-                    reportRow.innerHTML = `
-                        <td>${reportDate.toLocaleString()}</td>
-                        <td>${report.dato2 ?? 'N/A'}</td>
-                    `;
-                    tableBody.appendChild(reportRow);
-                });
-                console.log("Tabla cargada con datos.");
-            }
-        })
-        .catch(error => {
-            console.error('Error al obtener los datos:', error);
-        });
-});
-
+let deviceId;
+let datosDiarios = [];
+let datosSemanales = [];
+let datosMensuales = [];
+let allReports = [];
 
 document.addEventListener("DOMContentLoaded", function() {
     console.log("DOM completamente cargado y parseado");
 
     const urlParams = new URLSearchParams(window.location.search);
-    const deviceId = urlParams.get('device_id');
+    deviceId = urlParams.get('device_id');
     const machineName = document.getElementById('machine_name');
-    
-    if (machineName) {  // Verifica si el elemento existe
+
+    if (machineName) {
         machineName.innerText = `Machine ${deviceId}`;
     } else {
         console.warn("Elemento con id 'machine_name' no encontrado en el DOM.");
@@ -75,8 +30,47 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
     }
 
-    fetch(`/esp32_project/get_closes.php?device_id=${deviceId}`)
+    // Configurar navegación
+    document.querySelectorAll('.navbar-nav a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            mostrarSeccion(this.getAttribute('href').substring(1));
+        });
+    });
 
+    // Inicializar Flatpickr
+    initFlatpickr();
+
+    // Cargar sección inicial
+    mostrarSeccion('reportes');
+});
+
+function cargarReportes() {
+    if (datosCargados.reportes) return;
+
+    fetch(`/esp32_project/get_report.php?device_id=${deviceId}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                console.error(data.error);
+                return;
+            }
+            allReports = data.reports || [];
+            const reversedReports = [...allReports].reverse();
+            cargarTabla('report_table', reversedReports, ['timestamp', 'dato2']);
+            datosCargados.reportes = true;
+        })
+        .catch(error => console.error('Error al obtener los datos de reportes:', error));
+}
+
+function cargarCierresDiarios() {
+    if (datosCargados.diarios) return;
+
+    // Usamos get_closes.php que parece ser el endpoint correcto para videojuegos
+    fetch(`/esp32_project/get_closes.php?device_id=${deviceId}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -84,17 +78,17 @@ document.addEventListener("DOMContentLoaded", function() {
             return response.json();
         })
         .then(data => {
-            if (data.reports && Array.isArray(data.reports)) {
-                calcularCierresDiarios(data.reports);
+            const reports = data.reports || [];
+            if (reports.length > 0) {
+                calcularCierresDiarios(reports);
                 cargarTabla('tabla-diarios', datosDiarios, ['fecha', 'coin']);
+                datosCargados.diarios = true;
             } else {
                 console.warn('No se recibieron reportes válidos.');
             }
         })
-        .catch(error => {
-            console.error("Error al obtener los datos:", error);
-        });
-});
+        .catch(error => console.error("Error al obtener los datos de cierres diarios:", error));
+}
 
 // Función para calcular cierres diarios sin filtrar, para mostrar todos los días
 function calcularCierresDiarios(reports) {
@@ -221,47 +215,49 @@ function cargarTabla(idTabla, datos, columnas) {
     });
 }
 
-
-// Inicializar Flatpickr para el selector de inicio de semana
-flatpickr("#selector-inicio-semana", {
-    dateFormat: "Y-m-d",
-    onClose: function(selectedDates) {
-        if (selectedDates.length === 1) {
-            // Llamar a la función calcularCierreSemanalDesdeFecha
-            calcularCierreSemanalDesdeFecha(selectedDates[0]);
+function initFlatpickr() {
+    // Inicializar Flatpickr para el selector de inicio de semana
+    flatpickr("#selector-inicio-semana", {
+        dateFormat: "Y-m-d",
+        onClose: function(selectedDates) {
+            if (selectedDates.length === 1) {
+                calcularCierreSemanalDesdeFecha(selectedDates[0]);
+            }
         }
-    }
-});
+    });
 
-// Inicializar Flatpickr para seleccionar solo el mes
-flatpickr("#selector-inicio-mes", {
-    dateFormat: "Y-m",
-    altInput: true,
-    altFormat: "F Y",
-    plugins: [
-        new monthSelectPlugin({
-            shorthand: true,
-            dateFormat: "Y-m",
-            altFormat: "F Y"
-        })
-    ],
-    onClose: function(selectedDates) {
-        if (selectedDates.length === 1) {
-            calcularCierreMensual(selectedDates[0]);
-            cargarTabla('tabla-mensuales', datosMensuales, ['fecha', 'coin']);
+    // Inicializar Flatpickr para seleccionar solo el mes
+    flatpickr("#selector-inicio-mes", {
+        dateFormat: "Y-m",
+        altInput: true,
+        altFormat: "F Y",
+        plugins: [
+            new monthSelectPlugin({
+                shorthand: true,
+                dateFormat: "Y-m",
+                altFormat: "F Y"
+            })
+        ],
+        onClose: function(selectedDates) {
+            if (selectedDates.length === 1) {
+                calcularCierreMensual(selectedDates[0]);
+                cargarTabla('tabla-mensuales', datosMensuales, ['fecha', 'coin']);
+            }
         }
-    }
-});
-
+    });
+}
 
 // Función para mostrar la sección seleccionada y generar gráficas si es necesario
-function mostrarSeccion(seccion) {
+function mostrarSeccion(seccionId) {
     const secciones = document.querySelectorAll(".seccion");
     secciones.forEach((s) => s.classList.remove("active"));
-    document.getElementById(seccion).classList.add("active");
+    document.getElementById(seccionId).classList.add("active");
 
-    // Generar las gráficas al seleccionar la sección correspondiente
-    if (seccion === 'graficas' && !graficasCargadas.comparativa) {
+    if (seccionId === 'reportes') {
+        cargarReportes();
+    } else if (seccionId === 'diarios') {
+        cargarCierresDiarios();
+    } else if (seccionId === 'graficas' && !graficasCargadas.comparativa) {
         generarGraficaDiarias(datosDiarios);
         generarGraficaSemanales(datosSemanales);
         generarGraficaMensuales(datosMensuales);
@@ -282,7 +278,7 @@ let graficasCargadas = {
 function generarGraficaDiarias(datos) {
     const ctx = document.getElementById('grafica-ganancias-diarias').getContext('2d');
     const etiquetas = datos.map(d => d.fecha);
-    const ganancias = datos.map(d => d.pesos);  // Usando "pesos" como dato de ejemplo
+    const ganancias = datos.map(d => d.coin);
     
     new Chart(ctx, {
         type: 'bar',
@@ -309,7 +305,7 @@ function generarGraficaDiarias(datos) {
 function generarGraficaSemanales(datos) {
     const ctx = document.getElementById('grafica-ganancias-semanales').getContext('2d');
     const etiquetas = datos.map(d => d.fecha); // Etiqueta semanal
-    const ganancias = datos.map(d => d.pesos); // 'pesos' como ganancias semanales
+    const ganancias = datos.map(d => d.coin); // 'coin' como ganancias semanales
     
     new Chart(ctx, {
         type: 'line',
@@ -336,7 +332,7 @@ function generarGraficaSemanales(datos) {
 function generarGraficaMensuales(datos) {
     const ctx = document.getElementById('grafica-ganancias-mensuales').getContext('2d');
     const etiquetas = datos.map(d => d.fecha); // Fecha mensual
-    const ganancias = datos.map(d => d.coin); // 'pesos' para ganancias mensuales
+    const ganancias = datos.map(d => d.coin); // 'coin' para ganancias mensuales
     
     new Chart(ctx, {
         type: 'bar',
@@ -364,8 +360,8 @@ function generarGraficaMensuales(datos) {
 function generarGraficaComparativa(datos) {
     const ctx = document.getElementById('grafica-comparativa').getContext('2d');
     const etiquetas = datos.map(d => d.fecha); // Fecha para la comparativa
-    const ganancias = datos.map(d => d.coin); // 'pesos' como ganancias
-    
+    const ganancias = datos.map(d => d.coin); // 'coin' como ganancias
+    const perdidas = []; // No hay datos de pérdidas para videojuegos
     new Chart(ctx, {
         type: 'line',
         data: {

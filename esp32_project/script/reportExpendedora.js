@@ -1,100 +1,44 @@
+// Objeto para rastrear qué datos ya se han cargado
+const datosCargados = {
+    reportes: false,
+    diarios: false,
+    semanales: false,
+    mensuales: false,
+    graficas: false
+};
+
+let device_id; // Variable global para el ID del dispositivo
+
 document.addEventListener("DOMContentLoaded", function () {
     console.log("DOM completamente cargado y parseado");
 
     const urlParams = new URLSearchParams(window.location.search);
-    const device_id = urlParams.get('device_id');
+    device_id = urlParams.get('device_id'); // Asignar a la variable global
     const machineName = document.getElementById('machine_name');
-    
+
     if (machineName) {
         machineName.innerText = `Machine ${device_id}`;
     } else {
         console.warn("Elemento con id 'machine_name' no encontrado en el DOM.");
     }
 
-    if (!device_id) {
-        console.error("El id_expendedora es requerido.");
+    if (!device_id) { // Corregido el nombre de la variable
+        console.error("El device_id es requerido.");
         return;
     }
 
-    // Obtener reportes
-    fetch(`/esp32_project/expendedora/get_report_expendedora.php?device_id=${device_id}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log("Datos recibidos de reportes:", data);
-
-            if (data.error) {
-                console.error(data.error);
-                return;
-            }
-
-            if (data.reports && Array.isArray(data.reports)) {
-                // Invertir el array de reportes para mostrar el más reciente en la cima
-                const reversedReports = data.reports.reverse();
-                cargarTabla('report_table', reversedReports, ['timestamp', 'dato1', 'dato2']);
-            } else {
-                console.warn('No se recibieron reportes válidos.');
-            }
-        })
-        .catch(error => {
-            console.error("Error al obtener los datos de reportes:", error);
+    // Configurar los clics del menú para usar la nueva función mostrarSeccion
+    document.querySelectorAll('.navbar-nav a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            mostrarSeccion(this.getAttribute('href').substring(1));
         });
+    });
 
-    // Obtener datos de cierres diarios
-    fetch(`/esp32_project/expendedora/get_close_expendedora.php?id_expendedora=${device_id}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log("Datos recibidos de cierres diarios:", data);
-
-            if (data.error) {
-                console.error(data.error);
-                return;
-            }
-
-            if (data.reports && Array.isArray(data.reports)) {
-                cargarTablaDiarios('tabla-diarios', data.reports);
-            } else {
-                console.warn('No se recibieron cierres diarios válidos.');
-            }
-        })
-        .catch(error => {
-            console.error("Error al obtener los datos de cierres diarios:", error);
-        });
-
-    // Obtener datos de subcierres
-    fetch(`/esp32_project/expendedora/get_subcierre_expendedora.php?id_expendedora=${device_id}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log("Datos recibidos de subcierres:", data);
-
-            if (data.error) {
-                console.error(data.error);
-                return;
-            }
-
-            if (data.partial_reports && Array.isArray(data.partial_reports)) {
-                cargarTablaSubcierres(data.partial_reports);
-            } else {
-                console.warn('No se recibieron subcierres válidos.');
-            }
-        })
-        .catch(error => {
-            console.error("Error al obtener los datos de subcierres:", error);
-        });
+    // Aplicar estilos para scroll horizontal en contenedores de tablas
+    const style = document.createElement('style');
+    style.innerHTML = `.table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }`;
+    document.head.appendChild(style);
 
     // Hacer las tablas desplazables horizontalmente con el mouse
     const containers = document.querySelectorAll(".table-container");
@@ -126,80 +70,207 @@ document.addEventListener("DOMContentLoaded", function () {
             container.scrollLeft = scrollLeft - walk;
         });
     });
+
+    // Mostrar la sección inicial por defecto y cargar sus datos
+    mostrarSeccion('reportes');
 });
 
-function cargarTablaDiarios(tablaId, reports) {
-    const tabla = document.getElementById(tablaId).querySelector('tbody');
-    tabla.innerHTML = ''; // Limpiar la tabla
+function cargarReportes() {
+    if (datosCargados.reportes) return; // No volver a cargar
 
-    console.log("Cargando cierres diarios en la tabla:", reports);
+    fetch(`/esp32_project/expendedora/get_report_expendedora.php?device_id=${device_id}`)
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            console.log("Datos recibidos de reportes:", data);
+            if (data.error) {
+                console.error(data.error);
+                return;
+            }
 
-    reports.forEach(report => {
-        const fecha = report.timestamp.split(' ')[0]; // Obtener solo la fecha de timestamp
-        const fila = document.createElement('tr');
-        fila.innerHTML = `
-            <td>${report.timestamp}</td>
-            <td>${report.fichas}</td>
-            <td>${report.dinero}</td>
-            <td>${report.p1}</td>
-            <td>${report.p2}</td>
-            <td>${report.p3}</td>
-            <td><button id="btn-${fecha}" onclick="toggleParciales('${fecha}')">Extender</button></td>
-        `;
-        tabla.appendChild(fila);
+            if (data.reports && Array.isArray(data.reports)) {
+                const reversedReports = data.reports.reverse();
+                cargarTabla('report_table', reversedReports, ['timestamp', 'dato1', 'dato2']);
+                datosCargados.reportes = true; // Marcar como cargado
+            } else {
+                console.warn('No se recibieron reportes válidos.');
+            }
+        })
+        .catch(error => {
+            console.error("Error al obtener los datos de reportes:", error);
+        });
+}
 
-        // Crear una fila para los cierres parciales
+function cargarCierresDiarios() {
+    if (datosCargados.diarios) return; // No volver a cargar
+
+    const fetchCierres = fetch(`/esp32_project/expendedora/get_close_expendedora.php?id_expendedora=${device_id}`).then(res => res.json());
+    const fetchSubcierres = fetch(`/esp32_project/expendedora/get_subcierre_expendedora.php?id_expendedora=${device_id}`).then(res => res.json());
+
+    Promise.all([fetchCierres, fetchSubcierres])
+        .then(([cierresData, subcierresData]) => {
+            console.log("Datos de cierres:", cierresData);
+            console.log("Datos de subcierres:", subcierresData);
+
+            const cierres = (cierresData.reports && Array.isArray(cierresData.reports)) ? cierresData.reports : [];
+            const subcierres = (subcierresData.partial_reports && Array.isArray(subcierresData.partial_reports)) ? subcierresData.partial_reports : [];
+
+            if (cierresData.error) {
+                console.error("Error en cierres:", cierresData.error);
+            }
+            if (subcierresData.error) {
+                console.error("Error en subcierres:", subcierresData.error);
+            }
+
+            fusionarYRenderizarDatos(cierres, subcierres);
+            datosCargados.diarios = true; // Marcar como cargado
+        })
+        .catch(error => console.error("Error al obtener datos de cierres o subcierres:", error));
+}
+
+function cargarSemanales() {
+    if (datosCargados.semanales) return; // No volver a cargar
+    console.log("Cargando datos semanales...");
+    // Aquí iría la lógica para cargar los datos semanales.
+    // Por ahora, solo inicializamos el selector de fecha.
+    datosCargados.semanales = true;
+}
+function createCell(text) {
+    const cell = document.createElement('td');
+    cell.textContent = text;
+    return cell;
+}
+
+function createHeaderCell(text) {
+    const cell = document.createElement('th');
+    cell.textContent = text;
+    return cell;
+}
+
+function createButton(fecha) {
+    const button = document.createElement('button');
+    button.id = `btn-${fecha}`;
+    button.textContent = 'Extender';
+    button.onclick = () => toggleParciales(fecha);
+    return button;
+}
+
+function createRow(cells) {
+    const row = document.createElement('tr');
+    cells.forEach(cell => row.appendChild(cell));
+    return row;
+}
+function fusionarYRenderizarDatos(cierres, subcierres) {
+    const tablaDiariosBody = document.querySelector('#tabla-diarios tbody');
+    if (!tablaDiariosBody) {
+        console.error("No se encontró el tbody de #tabla-diarios");
+        return;
+    }
+    tablaDiariosBody.innerHTML = '';
+
+    const datosAgrupados = {};
+
+    // 1. Procesar cierres diarios
+    cierres.forEach(cierre => {
+        // Añadir validación para asegurar que el timestamp existe
+        if (cierre && typeof cierre.timestamp === 'string') {
+            const fecha = cierre.timestamp.split(' ')[0];
+            if (!datosAgrupados[fecha]) {
+                datosAgrupados[fecha] = { cierre: null, subcierres: [] };
+            }
+            datosAgrupados[fecha].cierre = cierre;
+        }
+    });
+
+    // 2. Procesar subcierres
+    subcierres.forEach(subcierre => {
+        // Validación clave para evitar el error
+        if (subcierre && typeof subcierre.created_at === 'string') {
+            const fecha = subcierre.created_at.split(' ')[0];
+            if (!datosAgrupados[fecha]) {
+                // Si no hay cierre para esta fecha, creamos una entrada
+                datosAgrupados[fecha] = { cierre: null, subcierres: [] };
+            }
+            datosAgrupados[fecha].subcierres.push(subcierre);
+        }
+    });
+
+    // 3. Renderizar la tabla
+    const fechasOrdenadas = Object.keys(datosAgrupados).sort((a, b) => new Date(b) - new Date(a)); // De más reciente a más antiguo
+
+    fechasOrdenadas.forEach(fecha => {
+        const { cierre, subcierres: subcierresDelDia } = datosAgrupados[fecha];
+
+        // Crear la fila del cierre (real o fantasma)
+        const filaCierre = document.createElement('tr');
+        const cierreData = cierre || { timestamp: `${fecha} (Sin cierre)`, fichas: 0, dinero: 0, p1: 0, p2: 0, p3: 0 };
+
+        const buttonCell = document.createElement('td');
+        const button = createButton(fecha);
+        buttonCell.appendChild(button);
+
+        filaCierre.appendChild(createCell(cierreData.timestamp));
+        filaCierre.appendChild(createCell(cierreData.fichas));
+        filaCierre.appendChild(createCell(cierreData.dinero));
+        filaCierre.appendChild(createCell(cierreData.p1));
+        filaCierre.appendChild(createCell(cierreData.p2));
+        filaCierre.appendChild(createCell(cierreData.p3));
+        filaCierre.appendChild(buttonCell);
+
+        tablaDiariosBody.appendChild(filaCierre);
+
+        // Crear la fila oculta para los subcierres
         const filaParciales = document.createElement("tr");
         filaParciales.id = `parciales-${fecha}`;
         filaParciales.style.display = "none";
-        filaParciales.innerHTML = `
-            <td colspan="7">
-                <div class="table-container" id="scroll-container-parciales-${fecha}">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Fichas</th>
-                                <th>Dinero</th>
-                                <th>P1</th>
-                                <th>P2</th>
-                                <th>P3</th>
-                                <th>Empleado</th>
-                            </tr>
-                        </thead>
-                        <tbody id="subcierres-${fecha}">
-                            <!-- Subcierres se cargarán aquí -->
-                        </tbody>
-                    </table>
-                </div>
-            </td>
-        `;
-        tabla.appendChild(filaParciales);
-    });
-}
 
-function cargarTablaSubcierres(partialReports) {
-    console.log("Cargando subcierres en la tabla:", partialReports);
+        const cellParciales = document.createElement('td');
+        cellParciales.colSpan = 7;
 
-    partialReports.forEach(parcial => {
-        const fecha = parcial.updated_at.split(' ')[0]; // Obtener solo la fecha de updated_at
-        const subcierresTabla = document.getElementById(`subcierres-${fecha}`);
-        if (subcierresTabla) {
-            const filaParcial = document.createElement('tr');
-            filaParcial.innerHTML = `
-                <td>${parcial.created_at}</td>
-                <td>${parcial.partial_fichas}</td>
-                <td>${parcial.partial_dinero}</td>
-                <td>${parcial.partial_p1}</td>
-                <td>${parcial.partial_p2}</td>
-                <td>${parcial.partial_p3}</td>
-                <td>${parcial.employee_id}</td>
-            `;
-            subcierresTabla.appendChild(filaParcial);
+        const containerDiv = document.createElement('div');
+        containerDiv.className = 'table-container';
+        containerDiv.id = `scroll-container-parciales-${fecha}`;
+
+        const subTable = document.createElement('table');
+        const subTableHead = document.createElement('thead');
+        const subTableBody = document.createElement('tbody');
+        subTableBody.id = `subcierres-${fecha}`;
+
+        const headerRow = createRow([
+            createHeaderCell('Fecha'), createHeaderCell('Fichas'), createHeaderCell('Dinero'),
+            createHeaderCell('P1'), createHeaderCell('P2'), createHeaderCell('P3'), createHeaderCell('Empleado')
+        ]);
+
+        subTableHead.appendChild(headerRow);
+        subTable.appendChild(subTableHead);
+        subTable.appendChild(subTableBody);
+        containerDiv.appendChild(subTable);
+        cellParciales.appendChild(containerDiv);
+        filaParciales.appendChild(cellParciales);
+        tablaDiariosBody.appendChild(filaParciales);
+
+        // Llenar la tabla de subcierres
+        if (subcierresDelDia.length > 0) {
+            // Ordenar subcierres por fecha para consistencia
+            subcierresDelDia.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+            subcierresDelDia.forEach(parcial => {
+                const filaParcial = createRow([
+                    createCell(parcial.created_at), createCell(parcial.partial_fichas), createCell(parcial.partial_dinero),
+                    createCell(parcial.partial_p1), createCell(parcial.partial_p2), createCell(parcial.partial_p3), createCell(parcial.employee_id)
+                ]);
+                subTableBody.appendChild(filaParcial);
+            });
         } else {
-            console.warn(`No se encontró la tabla para subcierres con fecha: ${fecha}`);
+            // Si no hay subcierres, pero hay un cierre, el botón "Extender" no debería hacer nada
+            // o mostrar un mensaje. Podemos deshabilitar el botón.
+            button.disabled = true;
+            button.innerText = "No hay";
         }
     });
+
 }
 
 function toggleParciales(fecha) {
@@ -232,14 +303,29 @@ function cargarTabla(idTabla, datos, columnas) {
 
 // Función para mostrar secciones
 function mostrarSeccion(seccionId) {
-    const secciones = document.querySelectorAll('.seccion');
-    secciones.forEach(seccion => {
-        seccion.style.display = 'none';
-    });
+    // Ocultar todas las secciones y quitar la clase 'active' de los links del menú
+    const secciones = document.querySelectorAll(".seccion");
+    secciones.forEach((s) => s.classList.remove("active"));
+    document.querySelectorAll('.navbar-nav li').forEach(li => li.classList.remove('active'));
 
-    const seccion = document.getElementById(seccionId);
-    if (seccion) {
-        seccion.style.display = 'block';
+    // Mostrar la sección activa y marcar el link del menú como activo
+    const seccionActiva = document.getElementById(seccionId);
+    if (seccionActiva) {
+        seccionActiva.classList.add("active");
+        const linkActivo = document.querySelector(`a[href="#${seccionId}"]`);
+        if (linkActivo) {
+            linkActivo.parentElement.classList.add('active');
+        }
+
+        // Cargar los datos correspondientes a la sección si no se han cargado
+        if (seccionId === 'reportes') {
+            cargarReportes();
+        } else if (seccionId === 'diarios') {
+            cargarCierresDiarios();
+        } else if (seccionId === 'semanales') {
+            cargarSemanales();
+        }
+
     } else {
         console.error(`Sección con id ${seccionId} no encontrada.`);
     }
@@ -250,8 +336,8 @@ flatpickr("#selector-inicio-semana", {
     dateFormat: "Y-m-d",
     onClose: function(selectedDates) {
         if (selectedDates.length === 1) {
-            // Llamar a la función calcularCierreSemanalDesdeFecha
-            calcularCierreSemanalDesdeFecha(selectedDates[0]);
+            // Aquí iría la lógica para calcular y mostrar el cierre semanal
+            console.log("Fecha semanal seleccionada:", selectedDates[0]);
         }
     }
 });
@@ -270,8 +356,8 @@ flatpickr("#selector-inicio-mes", {
     ],
     onClose: function(selectedDates) {
         if (selectedDates.length === 1) {
-            calcularCierreMensual(selectedDates[0]);
-            cargarTabla('tabla-mensuales', datosMensuales, ['fecha', 'fichas', 'dinero']);
+            // Aquí iría la lógica para calcular y mostrar el cierre mensual
+            console.log("Mes seleccionado:", selectedDates[0]);
         }
     }
 });

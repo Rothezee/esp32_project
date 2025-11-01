@@ -22,11 +22,11 @@
                 <div class="navbar-menu" id="open-navbar1">
                     <ul class="navbar-nav">
                         <li class="active"><a href="../dashboard.php">Home</a></li> 
-                        <li><a href="#reportes" onclick="mostrarSeccion('reportes')">Reportes</a></li>
-                        <li><a href="#diarios" onclick="mostrarSeccion('diarios')">Cierres Diarios</a></li>
-                        <li><a href="#semanales" onclick="mostrarSeccion('semanales')">Cierres Semanales</a></li>
-                        <li><a href="#mensuales" onclick="mostrarSeccion('mensuales')">Cierres Mensuales</a></li>
-                        <li><a href="#graficas" onclick="mostrarSeccion('graficas')">Gráficas Comparativas</a></li>
+                        <li><a href="#reportes">Reportes</a></li>
+                        <li><a href="#diarios">Cierres Diarios</a></li>
+                        <li><a href="#semanales">Cierres Semanales</a></li>
+                        <li><a href="#mensuales">Cierres Mensuales</a></li>
+                        <li><a href="#graficas">Gráficas Comparativas</a></li>
                     </ul>
                 </div>
             </div>

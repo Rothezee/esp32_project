@@ -37,17 +37,18 @@ window.addEventListener('mouseup', (event) => {
     })
   }
 })
+
 function handleSmallScreens() {
   document.querySelector('.navbar-toggler')
     .addEventListener('click', () => {
       let navbarMenu = document.querySelector('.navbar-menu')
 
-      if (!navbarMenu.classList.contains('active')) {
-        navbarMenu.classList.add('active')
-      } else {
+      if (navbarMenu.classList.contains('active')) {
         navbarMenu.classList.remove('active')
+      } else {
+        navbarMenu.classList.add('active')
       }
     })
 }
 
-handleSmallScreens()
+handleSmallScreens();
