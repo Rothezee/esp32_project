@@ -15,7 +15,7 @@ if (!isset($_GET['id_expendedora'])) {
 $id_expendedora = $_GET['id_expendedora'];
 
 // Consulta para obtener los cierres parciales
-$sql = "SELECT id, cierre_expendedora_id, partial_fichas, partial_dinero, partial_p1, partial_p2, partial_p3, employee_id, created_at FROM subcierres_expendedoras WHERE cierre_expendedora_id = ?";
+$sql = "SELECT id, cierre_expendedora_id, partial_fichas, partial_dinero, partial_p1, partial_p2, partial_p3, partial_devolucion, partial_normales, partial_promocion, employee_id, created_at FROM subcierres_expendedoras WHERE cierre_expendedora_id = ?";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     header('Content-Type: application/json');

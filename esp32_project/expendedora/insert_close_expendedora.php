@@ -26,23 +26,26 @@ if ($conn->connect_error) {
 $data = json_decode(file_get_contents('php://input'), true);
 
 // Verificar que se hayan recibido todos los datos necesarios
-if (!isset($data['id_expendedora']) || !isset($data['fichas']) || !isset($data['dinero']) || !isset($data['p1']) || !isset($data['p2']) || !isset($data['p3'])) {
+if (!isset($data['device_id']) || !isset($data['fichas_expendidas']) || !isset($data['dinero_ingresado']) || !isset($data['promo1_contador']) || !isset($data['promo2_contador']) || !isset($data['promo3_contador'])) {
     error_log("Missing data");
     echo json_encode(["error" => "Missing data"]);
     $conn->close();
     exit();
 }
 
-$id_expendedora = $data['id_expendedora'];
-$fichas = $data['fichas'];
-$dinero = $data['dinero'];
-$p1 = $data['p1'];
-$p2 = $data['p2'];
-$p3 = $data['p3'];
+$id_expendedora = $data['device_id'];
+$fichas = $data['fichas_expendidas'];
+$dinero = $data['dinero_ingresado'];
+$p1 = $data['promo1_contador'];
+$p2 = $data['promo2_contador'];
+$p3 = $data['promo3_contador'];
+$fichas_devolucion = isset($data['fichas_devolucion']) ? $data['fichas_devolucion'] : 0;
+$fichas_normales = isset($data['fichas_normales']) ? $data['fichas_normales'] : 0;
+$fichas_promocion = isset($data['fichas_promocion']) ? $data['fichas_promocion'] : 0;
 $timestamp = date("Y-m-d H:i:s");
 
 // Insertar datos en la tabla cierres_expendedoras
-$sql = "INSERT INTO cierres_expendedoras (id_expendedora, fichas, dinero, p1, p2, p3, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)";
+$sql = "INSERT INTO cierres_expendedoras (id_expendedora, fichas, dinero, p1, p2, p3, fichas_devolucion, fichas_normales, fichas_promocion, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     error_log("Prepare failed: " . $conn->error);
@@ -50,7 +53,7 @@ if (!$stmt) {
     $conn->close();
     exit();
 }
-$stmt->bind_param("siiiiis", $id_expendedora, $fichas, $dinero, $p1, $p2, $p3, $timestamp);
+$stmt->bind_param("siiiiiiiis", $id_expendedora, $fichas, $dinero, $p1, $p2, $p3, $fichas_devolucion, $fichas_normales, $fichas_promocion, $timestamp);
 
 if ($stmt->execute()) {
     // Actualizar el last_heartbeat en la tabla devices
@@ -69,7 +72,7 @@ if ($stmt->execute()) {
     echo json_encode(["success" => "Data inserted successfully"]);
 } else {
     error_log("Execute failed: " . $stmt->error);
-    echo json_encode(["error" => "Error inserting data"]);
+    echo json_encode(["error" => "Error inserting data: " . $stmt->error]);
 }
 
 $stmt->close();

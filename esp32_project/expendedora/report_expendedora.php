@@ -62,6 +62,9 @@
                         <th>P1</th>
                         <th>P2</th>
                         <th>P3</th>
+                        <th>Fichas Devolución</th>
+                        <th>Fichas Normales</th>
+                        <th>Fichas Promocion</th>
                         <th>Extender</th>
                     </tr>
                 </thead>
