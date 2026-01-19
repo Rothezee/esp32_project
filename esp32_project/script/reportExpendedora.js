@@ -27,6 +27,15 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
+    // Envolver la tabla de diarios en un contenedor con scroll si existe
+    const tablaDiarios = document.getElementById('tabla-diarios');
+    if (tablaDiarios && !tablaDiarios.parentElement.classList.contains('table-container')) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-container';
+        tablaDiarios.parentNode.insertBefore(wrapper, tablaDiarios);
+        wrapper.appendChild(tablaDiarios);
+    }
+
     // Configurar los clics del menú para usar la nueva función mostrarSeccion
     document.querySelectorAll('.navbar-nav a[href^="#"]').forEach(link => {
         link.addEventListener('click', function(e) {
@@ -34,7 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
             mostrarSeccion(this.getAttribute('href').substring(1));
         });
     });
-
+ 
     // Aplicar estilos para scroll horizontal en contenedores de tablas
     const style = document.createElement('style');
     style.innerHTML = `.table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }`;
@@ -115,7 +124,9 @@ function cargarCierresDiarios() {
             console.log("Datos de subcierres:", subcierresData);
 
             const cierres = (cierresData.reports && Array.isArray(cierresData.reports)) ? cierresData.reports : [];
-            const subcierres = (subcierresData.partial_reports && Array.isArray(subcierresData.partial_reports)) ? subcierresData.partial_reports : [];
+            // Intentar obtener subcierres de 'partial_reports' o 'reports' por si cambia la estructura del JSON
+            const subcierres = (subcierresData && subcierresData.partial_reports && Array.isArray(subcierresData.partial_reports)) ? subcierresData.partial_reports : 
+                               (subcierresData && subcierresData.reports && Array.isArray(subcierresData.reports)) ? subcierresData.reports : [];
 
             if (cierresData.error) {
                 console.error("Error en cierres:", cierresData.error);
@@ -187,8 +198,9 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
     // 2. Procesar subcierres
     subcierres.forEach(subcierre => {
         // Validación clave para evitar el error
-        if (subcierre && typeof subcierre.created_at === 'string') {
-            const fecha = subcierre.created_at.split(' ')[0];
+        const fechaStr = subcierre.created_at || subcierre.timestamp || subcierre.fecha;
+        if (subcierre && typeof fechaStr === 'string') {
+            const fecha = fechaStr.split(' ')[0];
             if (!datosAgrupados[fecha]) {
                 // Si no hay cierre para esta fecha, creamos una entrada
                 datosAgrupados[fecha] = { cierre: null, subcierres: [] };
@@ -205,7 +217,7 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
 
         // Crear la fila del cierre (real o fantasma)
         const filaCierre = document.createElement('tr');
-        const cierreData = cierre || { timestamp: `${fecha} (Sin cierre)`, fichas: 0, dinero: 0, p1: 0, p2: 0, p3: 0 };
+        const cierreData = cierre || { timestamp: `${fecha} (Sin cierre)`, fichas: 0, dinero: 0, p1: 0, p2: 0, p3: 0, fichas_devolucion: 0, fichas_normales: 0, fichas_promocion: 0 };
 
         const buttonCell = document.createElement('td');
         const button = createButton(fecha);
@@ -217,6 +229,9 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
         filaCierre.appendChild(createCell(cierreData.p1));
         filaCierre.appendChild(createCell(cierreData.p2));
         filaCierre.appendChild(createCell(cierreData.p3));
+        filaCierre.appendChild(createCell(cierreData.fichas_devolucion));
+        filaCierre.appendChild(createCell(cierreData.fichas_normales));
+        filaCierre.appendChild(createCell(cierreData.fichas_promocion));
         filaCierre.appendChild(buttonCell);
 
         tablaDiariosBody.appendChild(filaCierre);
@@ -227,7 +242,7 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
         filaParciales.style.display = "none";
 
         const cellParciales = document.createElement('td');
-        cellParciales.colSpan = 7;
+        cellParciales.colSpan = 10; // Corregido: La tabla padre tiene 10 columnas, no 7.
 
         const containerDiv = document.createElement('div');
         containerDiv.className = 'table-container';
@@ -240,7 +255,9 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
 
         const headerRow = createRow([
             createHeaderCell('Fecha'), createHeaderCell('Fichas'), createHeaderCell('Dinero'),
-            createHeaderCell('P1'), createHeaderCell('P2'), createHeaderCell('P3'), createHeaderCell('Empleado')
+            createHeaderCell('P1'), createHeaderCell('P2'), createHeaderCell('P3'), createHeaderCell('Fichas Devolución'), 
+            createHeaderCell('Fichas Normales'), createHeaderCell('Fichas Promocion'),
+            createHeaderCell('Empleado')
         ]);
 
         subTableHead.appendChild(headerRow);
@@ -254,12 +271,19 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
         // Llenar la tabla de subcierres
         if (subcierresDelDia.length > 0) {
             // Ordenar subcierres por fecha para consistencia
-            subcierresDelDia.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            subcierresDelDia.sort((a, b) => new Date(a.created_at || a.timestamp || a.fecha) - new Date(b.created_at || b.timestamp || b.fecha));
 
             subcierresDelDia.forEach(parcial => {
+                // Función auxiliar para obtener valor con o sin prefijo 'partial_'
+                const getVal = (key) => parcial[`partial_${key}`] !== undefined ? parcial[`partial_${key}`] : (parcial[key] !== undefined ? parcial[key] : 0);
+
                 const filaParcial = createRow([
-                    createCell(parcial.created_at), createCell(parcial.partial_fichas), createCell(parcial.partial_dinero),
-                    createCell(parcial.partial_p1), createCell(parcial.partial_p2), createCell(parcial.partial_p3), createCell(parcial.employee_id)
+                    createCell(parcial.created_at || parcial.timestamp || parcial.fecha), createCell(getVal('fichas')), createCell(getVal('dinero')),
+                    createCell(getVal('p1')), createCell(getVal('p2')), createCell(getVal('p3')),
+                    createCell(getVal('fichas_devolucion')), // Agregado para alinear con header
+                    createCell(getVal('fichas_normales')),   // Agregado para alinear con header
+                    createCell(getVal('fichas_promocion')),  // Agregado para alinear con header
+                    createCell(parcial.employee_id || parcial.empleado || '')
                 ]);
                 subTableBody.appendChild(filaParcial);
             });
