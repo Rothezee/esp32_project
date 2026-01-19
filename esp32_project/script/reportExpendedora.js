@@ -278,11 +278,11 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
                 const getVal = (key) => parcial[`partial_${key}`] !== undefined ? parcial[`partial_${key}`] : (parcial[key] !== undefined ? parcial[key] : 0);
 
                 const filaParcial = createRow([
-                    createCell(parcial.created_at || parcial.timestamp || parcial.fecha), createCell(getVal('fichas')), createCell(getVal('dinero')),
-                    createCell(getVal('p1')), createCell(getVal('p2')), createCell(getVal('p3')),
-                    createCell(getVal('fichas_devolucion')), // Agregado para alinear con header
-                    createCell(getVal('fichas_normales')),   // Agregado para alinear con header
-                    createCell(getVal('fichas_promocion')),  // Agregado para alinear con header
+                    createCell(parcial.created_at || parcial.timestamp || parcial.fecha), createCell(getVal('partial_fichas')), createCell(getVal('partial_dinero')),
+                    createCell(getVal('partial_p1')), createCell(getVal('partial_p2')), createCell(getVal('partial_p3')),
+                    createCell(getVal('partial_devolucion')), // Agregado para alinear con header
+                    createCell(getVal('partial_normales')),   // Agregado para alinear con header
+                    createCell(getVal('partial_promocion')),  // Agregado para alinear con header
                     createCell(parcial.employee_id || parcial.empleado || '')
                 ]);
                 subTableBody.appendChild(filaParcial);
