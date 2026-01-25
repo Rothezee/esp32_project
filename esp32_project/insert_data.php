@@ -53,7 +53,7 @@ if (json_last_error() !== JSON_ERROR_NONE) {
 // El listener MQTT se asegura de que los campos existan, pero esta validación
 // sigue siendo útil si el script es llamado directamente por otro medio.
 if (!isset($data['device_id']) || !isset($data['dato1']) ||
-    !isset($data['dato2']) || !isset($data['dato3']) || !isset($data['dato4'])
+    !isset($data['dato2']) || !isset($data['dato3']) || !isset($data['dato4']) || !isset($data['dato5'])
 ) {
     error_log("Missing data: " . json_encode($data));
     http_response_code(400);
@@ -71,10 +71,11 @@ $dato1 = (int)$data['dato1']; // pago
 $dato2 = (int)$data['dato2']; // partidas_jugadas
 $dato3 = (int)$data['dato3']; // premios_pagados
 $dato4 = (int)$data['dato4']; // banco
+$dato5 = (int)$data['dato5']; // banco
 
 // ===== INSERTAR DATOS =====
-$sql = "INSERT INTO datos (device_id, dato1, dato2, dato3, dato4, timestamp) 
-        VALUES (?, ?, ?, ?, ?, NOW())";
+$sql = "INSERT INTO datos (device_id, dato1, dato2, dato3, dato4, dato5, timestamp) 
+        VALUES (?, ?, ?, ?, ?, ?, NOW())";
 
 $stmt = $conn->prepare($sql);
 
@@ -89,7 +90,7 @@ if (!$stmt) {
     exit();
 }
 
-$stmt->bind_param("siiii", $device_id, $dato1, $dato2, $dato3, $dato4);
+$stmt->bind_param("siiiii", $device_id, $dato1, $dato2, $dato3, $dato4, $dato5);
 
 if ($stmt->execute()) {
     $insert_id = $stmt->insert_id;
