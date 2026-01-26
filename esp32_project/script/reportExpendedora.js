@@ -113,66 +113,68 @@ function cargarReportes() {
 }
 
 function cargarCierresDiarios() {
-    if (datosCargados.diarios) return; // No volver a cargar
+    if (datosCargados.diarios) return;
 
-    const fetchCierres = fetch(`/esp32_project/expendedora/get_close_expendedora.php?id_expendedora=${device_id}`).then(res => res.json());
-    const fetchSubcierres = fetch(`/esp32_project/expendedora/get_subcierre_expendedora.php?id_expendedora=${device_id}`).then(res => res.json());
+    const fetchCierres = fetch(`/esp32_project/expendedora/get_close_expendedora.php?id_expendedora=${device_id}`)
+        .then(res => {
+            if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
+            return res.json();
+        })
+        .catch(err => {
+            console.error("Error al obtener cierres:", err);
+            return { reports: [], error: err.message };
+        });
+
+    const fetchSubcierres = fetch(`/esp32_project/expendedora/get_subcierre_expendedora.php?id_expendedora=${device_id}`)
+        .then(res => {
+            if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
+            return res.json();
+        })
+        .catch(err => {
+            console.error("Error al obtener subcierres:", err);
+            return { partial_reports: [], error: err.message };
+        });
 
     Promise.all([fetchCierres, fetchSubcierres])
         .then(([cierresData, subcierresData]) => {
             console.log("Datos de cierres:", cierresData);
             console.log("Datos de subcierres:", subcierresData);
 
-            const cierres = (cierresData.reports && Array.isArray(cierresData.reports)) ? cierresData.reports : [];
-            // Intentar obtener subcierres de 'partial_reports' o 'reports' por si cambia la estructura del JSON
-            const subcierres = (subcierresData && subcierresData.partial_reports && Array.isArray(subcierresData.partial_reports)) ? subcierresData.partial_reports : 
-                               (subcierresData && subcierresData.reports && Array.isArray(subcierresData.reports)) ? subcierresData.reports : [];
+            // Validación robusta con logs de debugging
+            const cierres = (cierresData?.reports && Array.isArray(cierresData.reports)) 
+                ? cierresData.reports 
+                : [];
 
-            if (cierresData.error) {
-                console.error("Error en cierres:", cierresData.error);
+            // Intenta múltiples estructuras posibles de la respuesta
+            let subcierres = [];
+            if (subcierresData?.partial_reports && Array.isArray(subcierresData.partial_reports)) {
+                subcierres = subcierresData.partial_reports;
+            } else if (subcierresData?.reports && Array.isArray(subcierresData.reports)) {
+                subcierres = subcierresData.reports;
+            } else if (Array.isArray(subcierresData)) {
+                // Por si el PHP devuelve directamente un array
+                subcierres = subcierresData;
             }
-            if (subcierresData.error) {
-                console.error("Error en subcierres:", subcierresData.error);
+
+            console.log(`Procesando ${cierres.length} cierres y ${subcierres.length} subcierres`);
+
+            if (cierresData?.error) {
+                console.error("Error en API de cierres:", cierresData.error);
+            }
+            if (subcierresData?.error) {
+                console.error("Error en API de subcierres:", subcierresData.error);
             }
 
             fusionarYRenderizarDatos(cierres, subcierres);
-            datosCargados.diarios = true; // Marcar como cargado
+            datosCargados.diarios = true;
         })
-        .catch(error => console.error("Error al obtener datos de cierres o subcierres:", error));
+        .catch(error => {
+            console.error("Error crítico en Promise.all:", error);
+            // Renderizar aunque sea con datos vacíos
+            fusionarYRenderizarDatos([], []);
+        });
 }
 
-function cargarSemanales() {
-    if (datosCargados.semanales) return; // No volver a cargar
-    console.log("Cargando datos semanales...");
-    // Aquí iría la lógica para cargar los datos semanales.
-    // Por ahora, solo inicializamos el selector de fecha.
-    datosCargados.semanales = true;
-}
-function createCell(text) {
-    const cell = document.createElement('td');
-    cell.textContent = text;
-    return cell;
-}
-
-function createHeaderCell(text) {
-    const cell = document.createElement('th');
-    cell.textContent = text;
-    return cell;
-}
-
-function createButton(fecha) {
-    const button = document.createElement('button');
-    button.id = `btn-${fecha}`;
-    button.textContent = 'Extender';
-    button.onclick = () => toggleParciales(fecha);
-    return button;
-}
-
-function createRow(cells) {
-    const row = document.createElement('tr');
-    cells.forEach(cell => row.appendChild(cell));
-    return row;
-}
 function fusionarYRenderizarDatos(cierres, subcierres) {
     const tablaDiariosBody = document.querySelector('#tabla-diarios tbody');
     if (!tablaDiariosBody) {
@@ -183,55 +185,77 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
 
     const datosAgrupados = {};
 
-    // 1. Procesar cierres diarios
+    // 1. Procesar cierres diarios con validación
     cierres.forEach(cierre => {
-        // Añadir validación para asegurar que el timestamp existe
-        if (cierre && typeof cierre.timestamp === 'string') {
-            const fecha = cierre.timestamp.split(' ')[0];
+        if (!cierre || typeof cierre !== 'object') {
+            console.warn("Cierre inválido:", cierre);
+            return;
+        }
+
+        const timestampStr = cierre.timestamp || cierre.created_at || cierre.fecha;
+        if (typeof timestampStr === 'string' && timestampStr.trim() !== '') {
+            const fecha = timestampStr.split(' ')[0];
             if (!datosAgrupados[fecha]) {
                 datosAgrupados[fecha] = { cierre: null, subcierres: [] };
             }
             datosAgrupados[fecha].cierre = cierre;
+        } else {
+            console.warn("Cierre sin timestamp válido:", cierre);
         }
     });
 
-    // 2. Procesar subcierres
+    // 2. Procesar subcierres con validación
     subcierres.forEach(subcierre => {
-        // Validación clave para evitar el error
+        if (!subcierre || typeof subcierre !== 'object') {
+            console.warn("Subcierre inválido:", subcierre);
+            return;
+        }
+
         const fechaStr = subcierre.created_at || subcierre.timestamp || subcierre.fecha;
-        if (subcierre && typeof fechaStr === 'string') {
+        if (typeof fechaStr === 'string' && fechaStr.trim() !== '') {
             const fecha = fechaStr.split(' ')[0];
             if (!datosAgrupados[fecha]) {
-                // Si no hay cierre para esta fecha, creamos una entrada
                 datosAgrupados[fecha] = { cierre: null, subcierres: [] };
             }
             datosAgrupados[fecha].subcierres.push(subcierre);
+        } else {
+            console.warn("Subcierre sin timestamp válido:", subcierre);
         }
     });
 
     // 3. Renderizar la tabla
-    const fechasOrdenadas = Object.keys(datosAgrupados).sort((a, b) => new Date(b) - new Date(a)); // De más reciente a más antiguo
+    const fechasOrdenadas = Object.keys(datosAgrupados).sort((a, b) => new Date(b) - new Date(a));
 
     fechasOrdenadas.forEach(fecha => {
         const { cierre, subcierres: subcierresDelDia } = datosAgrupados[fecha];
 
         // Crear la fila del cierre (real o fantasma)
         const filaCierre = document.createElement('tr');
-        const cierreData = cierre || { timestamp: `${fecha} (Sin cierre)`, fichas: 0, dinero: 0, p1: 0, p2: 0, p3: 0, fichas_devolucion: 0, fichas_normales: 0, fichas_promocion: 0 };
+        const cierreData = cierre || { 
+            timestamp: `${fecha} (Sin cierre)`, 
+            fichas: 0, 
+            dinero: 0, 
+            p1: 0, 
+            p2: 0, 
+            p3: 0, 
+            fichas_devolucion: 0, 
+            fichas_normales: 0, 
+            fichas_promocion: 0 
+        };
 
         const buttonCell = document.createElement('td');
         const button = createButton(fecha);
         buttonCell.appendChild(button);
 
         filaCierre.appendChild(createCell(cierreData.timestamp));
-        filaCierre.appendChild(createCell(cierreData.fichas));
-        filaCierre.appendChild(createCell(cierreData.dinero));
-        filaCierre.appendChild(createCell(cierreData.p1));
-        filaCierre.appendChild(createCell(cierreData.p2));
-        filaCierre.appendChild(createCell(cierreData.p3));
-        filaCierre.appendChild(createCell(cierreData.fichas_devolucion));
-        filaCierre.appendChild(createCell(cierreData.fichas_normales));
-        filaCierre.appendChild(createCell(cierreData.fichas_promocion));
+        filaCierre.appendChild(createCell(cierreData.fichas || 0));
+        filaCierre.appendChild(createCell(cierreData.dinero || 0));
+        filaCierre.appendChild(createCell(cierreData.p1 || 0));
+        filaCierre.appendChild(createCell(cierreData.p2 || 0));
+        filaCierre.appendChild(createCell(cierreData.p3 || 0));
+        filaCierre.appendChild(createCell(cierreData.fichas_devolucion || 0));
+        filaCierre.appendChild(createCell(cierreData.fichas_normales || 0));
+        filaCierre.appendChild(createCell(cierreData.fichas_promocion || 0));
         filaCierre.appendChild(buttonCell);
 
         tablaDiariosBody.appendChild(filaCierre);
@@ -242,7 +266,7 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
         filaParciales.style.display = "none";
 
         const cellParciales = document.createElement('td');
-        cellParciales.colSpan = 10; // Corregido: La tabla padre tiene 10 columnas, no 7.
+        cellParciales.colSpan = 10;
 
         const containerDiv = document.createElement('div');
         containerDiv.className = 'table-container';
@@ -255,8 +279,10 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
 
         const headerRow = createRow([
             createHeaderCell('Fecha'), createHeaderCell('Fichas'), createHeaderCell('Dinero'),
-            createHeaderCell('P1'), createHeaderCell('P2'), createHeaderCell('P3'), createHeaderCell('Fichas Devolución'), 
-            createHeaderCell('Fichas Normales'), createHeaderCell('Fichas Promocion'),
+            createHeaderCell('P1'), createHeaderCell('P2'), createHeaderCell('P3'), 
+            createHeaderCell('Fichas Devolución'), 
+            createHeaderCell('Fichas Normales'), 
+            createHeaderCell('Fichas Promocion'),
             createHeaderCell('Empleado')
         ]);
 
@@ -270,31 +296,46 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
 
         // Llenar la tabla de subcierres
         if (subcierresDelDia.length > 0) {
-            // Ordenar subcierres por fecha para consistencia
-            subcierresDelDia.sort((a, b) => new Date(a.created_at || a.timestamp || a.fecha) - new Date(b.created_at || b.timestamp || b.fecha));
+            subcierresDelDia.sort((a, b) => {
+                const fechaA = a.created_at || a.timestamp || a.fecha || '';
+                const fechaB = b.created_at || b.timestamp || b.fecha || '';
+                return new Date(fechaA) - new Date(fechaB);
+            });
 
             subcierresDelDia.forEach(parcial => {
-                // Función auxiliar para obtener valor con o sin prefijo 'partial_'
-                const getVal = (key) => parcial[`partial_${key}`] !== undefined ? parcial[`partial_${key}`] : (parcial[key] !== undefined ? parcial[key] : 0);
+                // CORRECCIÓN CRÍTICA: Función getVal corregida
+                const getVal = (key) => {
+                    // Primero intenta con el prefijo 'partial_'
+                    if (parcial[`partial_${key}`] !== undefined) {
+                        return parcial[`partial_${key}`];
+                    }
+                    // Luego intenta sin prefijo
+                    if (parcial[key] !== undefined) {
+                        return parcial[key];
+                    }
+                    // Por defecto devuelve 0
+                    return 0;
+                };
 
                 const filaParcial = createRow([
-                    createCell(parcial.created_at || parcial.timestamp || parcial.fecha), createCell(getVal('partial_fichas')), createCell(getVal('partial_dinero')),
-                    createCell(getVal('partial_p1')), createCell(getVal('partial_p2')), createCell(getVal('partial_p3')),
-                    createCell(getVal('partial_devolucion')), // Agregado para alinear con header
-                    createCell(getVal('partial_normales')),   // Agregado para alinear con header
-                    createCell(getVal('partial_promocion')),  // Agregado para alinear con header
+                    createCell(parcial.created_at || parcial.timestamp || parcial.fecha || ''), 
+                    createCell(getVal('fichas')),  // ← CORREGIDO: sin 'partial_'
+                    createCell(getVal('dinero')),
+                    createCell(getVal('p1')), 
+                    createCell(getVal('p2')), 
+                    createCell(getVal('p3')),
+                    createCell(getVal('devolucion')),
+                    createCell(getVal('normales')),
+                    createCell(getVal('promocion')),
                     createCell(parcial.employee_id || parcial.empleado || '')
                 ]);
                 subTableBody.appendChild(filaParcial);
             });
         } else {
-            // Si no hay subcierres, pero hay un cierre, el botón "Extender" no debería hacer nada
-            // o mostrar un mensaje. Podemos deshabilitar el botón.
             button.disabled = true;
             button.innerText = "No hay";
         }
     });
-
 }
 
 function toggleParciales(fecha) {
