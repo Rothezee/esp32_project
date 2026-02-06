@@ -319,14 +319,14 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
 
                 const filaParcial = createRow([
                     createCell(parcial.created_at || parcial.timestamp || parcial.fecha || ''), 
-                    createCell(getVal('fichas')),  // ← CORREGIDO: sin 'partial_'
-                    createCell(getVal('dinero')),
-                    createCell(getVal('p1')), 
-                    createCell(getVal('p2')), 
-                    createCell(getVal('p3')),
-                    createCell(getVal('devolucion')),
-                    createCell(getVal('normales')),
-                    createCell(getVal('promocion')),
+                    createCell(getVal('partial_fichas')),
+                    createCell(getVal('partial_dinero')),
+                    createCell(getVal('partial_p1')), 
+                    createCell(getVal('partial_p2')), 
+                    createCell(getVal('partial_p3')),
+                    createCell(getVal('partial_devolucion')),
+                    createCell(getVal('partial_normales')),
+                    createCell(getVal('partial_promocion')),
                     createCell(parcial.employee_id || parcial.empleado || '')
                 ]);
                 subTableBody.appendChild(filaParcial);
@@ -406,6 +406,32 @@ flatpickr("#selector-inicio-semana", {
         }
     }
 });
+
+function createButton(fecha) {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-sm btn-primary';
+    btn.textContent = 'Ver Parciales';
+    btn.onclick = function() { toggleParciales(fecha); };
+    return btn;
+}
+
+function createCell(text) {
+    const td = document.createElement('td');
+    td.textContent = text;
+    return td;
+}
+
+function createHeaderCell(text) {
+    const th = document.createElement('th');
+    th.textContent = text;
+    return th;
+}
+
+function createRow(cells) {
+    const tr = document.createElement('tr');
+    cells.forEach(cell => tr.appendChild(cell));
+    return tr;
+}
 
 // Inicializar Flatpickr para seleccionar solo el mes
 flatpickr("#selector-inicio-mes", {
