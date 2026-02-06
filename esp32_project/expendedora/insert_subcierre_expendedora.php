@@ -9,32 +9,19 @@ $log_file = 'error_log.txt';
 ini_set('log_errors', 1);
 ini_set('error_log', $log_file);
 
-$servername = "localhost";
-$username = "root";
-$password = "39090169";
-$dbname = "esp32_report";
-
-// Crear conexión
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Verificar conexión
-if ($conn->connect_error) {
-    error_log("Connection failed: " . $conn->connect_error);
-    die("Connection failed: " . $conn->connect_error);
-}
-
+include '../conn/connection.php';
 // Obtener los datos POST
 $data = json_decode(file_get_contents('php://input'), true);
 
 // Verificar que se hayan recibido todos los datos necesarios
-if (!isset($data['device_id']) || !isset($data['partial_fichas']) || !isset($data['partial_dinero']) || !isset($data['partial_p1']) || !isset($data['partial_p2']) || !isset($data['partial_p3']) || !isset($data['partial_devolucion']) || !isset($data['partial_normales']) || !isset($data['partial_promocion']) || !isset($data['employee_id'])) {
+if (!isset($data['cierre_expendedora_id']) || !isset($data['partial_fichas']) || !isset($data['partial_dinero']) || !isset($data['partial_p1']) || !isset($data['partial_p2']) || !isset($data['partial_p3']) || !isset($data['partial_devolucion']) || !isset($data['partial_normales']) || !isset($data['partial_promocion']) || !isset($data['employee_id'])) {
     error_log("Missing data");
     echo json_encode(["error" => "Missing data"]);
     $conn->close();
     exit();
 }
 
-$device_id = $data['device_id'];
+$device_id = $data['cierre_expendedora_id'];
 $partial_fichas = $data['partial_fichas'];
 $partial_dinero = $data['partial_dinero'];
 $partial_p1 = $data['partial_p1'];
