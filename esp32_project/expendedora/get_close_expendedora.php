@@ -3,19 +3,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-$servername = "localhost";
-$username = "root";
-$password = "39090169";
-$dbname = "esp32_report";
-
-// Crear conexión
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Verificar conexión
-if ($conn->connect_error) {
-    header('Content-Type: application/json');
-    die(json_encode(["error" => "Connection failed: " . $conn->connect_error]));
-}
+include '../conn/connection.php';
 
 // Verificar si se ha proporcionado un id_expendedora
 if (!isset($_GET['id_expendedora'])) {
@@ -26,7 +14,7 @@ if (!isset($_GET['id_expendedora'])) {
 $id_expendedora = $_GET['id_expendedora'];
 
 // Consulta para obtener los cierres diarios
-$sql = "SELECT id_expendedora, fichas, dinero, p1, p2, p3, fichas_devolucion, fichas_normales, fichas_promocion, timestamp FROM cierres_expendedoras WHERE id_expendedora = ?";
+$sql = "SELECT id_expendedora, fichas, dinero, p1, p2, p3, fichas_devolucion, fichas_normales, fichas_promocion, fichas_cambio, timestamp FROM cierres_expendedoras WHERE id_expendedora = ?";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     header('Content-Type: application/json');

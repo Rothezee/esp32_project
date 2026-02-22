@@ -48,6 +48,9 @@
                 <!-- Los datos serán insertados aquí para pantallas grandes -->
             </tbody>
         </table>
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="btn-ver-mas" style="display: none; width: auto; padding: 10px 20px;">Ver más</button>
+        </div>
     </section>
     
     <section id="diarios" class="seccion">
@@ -65,6 +68,7 @@
                         <th>Fichas Devolución</th>
                         <th>Fichas Normales</th>
                         <th>Fichas Promocion</th>
+                        <th>Fichas Cambio</th>
                         <th>Extender</th>
                     </tr>
                 </thead>

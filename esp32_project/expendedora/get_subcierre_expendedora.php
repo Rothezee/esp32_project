@@ -3,7 +3,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-$servername = "localhost";
+$servername = "localhost"; 
 include '../conn/connection.php';
 
 // Verificar si se ha proporcionado un id_expendedora
@@ -14,8 +14,6 @@ if (!isset($_GET['id_expendedora'])) {
 
 $id_expendedora = $_GET['id_expendedora'];
 
-// CORRECCIÓN RÁPIDA: Buscar todos los subcierres de esta máquina
-// Asumiendo que cierre_expendedora_id es en realidad el id_expendedora (device_id)
 $sql = "SELECT 
             id, 
             cierre_expendedora_id, 
@@ -27,6 +25,7 @@ $sql = "SELECT
             partial_devolucion, 
             partial_normales, 
             partial_promocion, 
+            partial_cambio, 
             employee_id, 
             created_at 
         FROM subcierres_expendedoras 

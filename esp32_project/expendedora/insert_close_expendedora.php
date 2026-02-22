@@ -8,19 +8,7 @@ $log_file = 'error_log.txt';
 ini_set('log_errors', 1);
 ini_set('error_log', $log_file);
 
-$servername = "localhost";
-$username = "root";
-$password = "39090169";
-$dbname = "esp32_report";
-
-// Crear conexión
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Verificar conexión
-if ($conn->connect_error) {
-    error_log("Connection failed: " . $conn->connect_error);
-    die("Connection failed: " . $conn->connect_error);
-}
+include '../conn/connection.php';
 
 // Obtener los datos POST
 $data = json_decode(file_get_contents('php://input'), true);
@@ -42,10 +30,11 @@ $p3 = $data['promo3_contador'];
 $fichas_devolucion = isset($data['fichas_devolucion']) ? $data['fichas_devolucion'] : 0;
 $fichas_normales = isset($data['fichas_normales']) ? $data['fichas_normales'] : 0;
 $fichas_promocion = isset($data['fichas_promocion']) ? $data['fichas_promocion'] : 0;
+$fichas_cambio = isset($data['fichas_cambio']) ? $data['fichas_cambio'] : 0;
 $timestamp = date("Y-m-d H:i:s");
 
 // Insertar datos en la tabla cierres_expendedoras
-$sql = "INSERT INTO cierres_expendedoras (id_expendedora, fichas, dinero, p1, p2, p3, fichas_devolucion, fichas_normales, fichas_promocion, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+$sql = "INSERT INTO cierres_expendedoras (id_expendedora, fichas, dinero, p1, p2, p3, fichas_devolucion, fichas_normales, fichas_promocion, fichas_cambio, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     error_log("Prepare failed: " . $conn->error);
@@ -53,7 +42,7 @@ if (!$stmt) {
     $conn->close();
     exit();
 }
-$stmt->bind_param("siiiiiiiis", $id_expendedora, $fichas, $dinero, $p1, $p2, $p3, $fichas_devolucion, $fichas_normales, $fichas_promocion, $timestamp);
+$stmt->bind_param("siiiiiiiiis", $id_expendedora, $fichas, $dinero, $p1, $p2, $p3, $fichas_devolucion, $fichas_normales, $fichas_promocion, $fichas_cambio, $timestamp);
 
 if ($stmt->execute()) {
     // Actualizar el last_heartbeat en la tabla devices

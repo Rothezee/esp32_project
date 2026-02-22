@@ -30,11 +30,12 @@ $partial_p3 = $data['partial_p3'];
 $partial_devolucion = $data['partial_devolucion'];
 $partial_normales = $data['partial_normales'];
 $partial_promocion = $data['partial_promocion'];
+$partial_cambio = isset($data['partial_cambio']) ? $data['partial_cambio'] : 0;
 $employee_id = $data['employee_id'];
 $created_at = date("Y-m-d H:i:s");
 
 // Insertar datos en la tabla subcierres_expendedoras
-$sql = "INSERT INTO subcierres_expendedoras (cierre_expendedora_id, partial_fichas, partial_dinero, partial_p1, partial_p2, partial_p3, partial_devolucion, partial_normales, partial_promocion, employee_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+$sql = "INSERT INTO subcierres_expendedoras (cierre_expendedora_id, partial_fichas, partial_dinero, partial_p1, partial_p2, partial_p3, partial_devolucion, partial_normales, partial_promocion, partial_cambio, employee_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     error_log("Prepare failed: " . $conn->error);
@@ -42,7 +43,7 @@ if (!$stmt) {
     $conn->close();
     exit();
 }
-$stmt->bind_param("siiiiiiiiss", $device_id, $partial_fichas, $partial_dinero, $partial_p1, $partial_p2, $partial_p3, $partial_devolucion, $partial_normales, $partial_promocion, $employee_id, $created_at);
+$stmt->bind_param("siiiiiiiiiss", $device_id, $partial_fichas, $partial_dinero, $partial_p1, $partial_p2, $partial_p3, $partial_devolucion, $partial_normales, $partial_promocion, $partial_cambio, $employee_id, $created_at);
 
 if ($stmt->execute()) {
     echo json_encode(["success" => "Data inserted successfully"]);

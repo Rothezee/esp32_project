@@ -1,6 +1,9 @@
 <?php
 include '../conn/connection.php';
 
+// Establecer la zona horaria a Argentina
+date_default_timezone_set('America/Argentina/Buenos_Aires');
+
 // Obtener los datos POST
 $data = json_decode(file_get_contents('php://input'), true);
 
@@ -18,12 +21,13 @@ $dato2 = $data['dato2'];
 $dato3 = 0; // Valor predeterminado
 $dato4 = 0; // Valor predeterminado
 $dato5 = 0; // Valor predeterminado
+$timestamp = date("Y-m-d H:i:s");
 
 // Iniciar una transacción para asegurar que ambas operaciones (insertar y actualizar) se completen
 $conn->begin_transaction();
 
 // Insertar datos genéricos de dispositivo (usado por expendedora, grúas, etc.)
-$sql = "INSERT INTO datos (device_id, dato1, dato2, dato3, dato4, dato5) VALUES (?, ?, ?, ?, ?, ?)";
+$sql = "INSERT INTO datos (device_id, dato1, dato2, dato3, dato4, dato5, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     error_log("Prepare failed: " . $conn->error);
@@ -35,7 +39,7 @@ if (!$stmt) {
 // s: string (device_id)
 // i: integer (dato1 - fichas)
 // i: integer (dato2 - dinero)
-$stmt->bind_param("siiiii", $device_id, $dato1, $dato2, $dato3, $dato4, $dato5);
+$stmt->bind_param("siiiiis", $device_id, $dato1, $dato2, $dato3, $dato4, $dato5, $timestamp);
 
 if ($stmt->execute()) {
     // Actualizar el last_heartbeat en la tabla devices
