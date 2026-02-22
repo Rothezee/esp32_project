@@ -7,6 +7,8 @@ const datosCargados = {
     graficas: false
 };
 
+let reportOffset = 0;
+const REPORT_LIMIT = 100;
 let device_id; // Variable global para el ID del dispositivo
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -84,10 +86,15 @@ document.addEventListener("DOMContentLoaded", function () {
     mostrarSeccion('reportes');
 });
 
-function cargarReportes() {
-    if (datosCargados.reportes) return; // No volver a cargar
+function cargarMasReportes() {
+    fetchReports(reportOffset);
+}
 
-    fetch(`/esp32_project/expendedora/get_report_expendedora.php?device_id=${device_id}`)
+function fetchReports(offset) {
+    const btnVerMas = document.getElementById('btn-ver-mas');
+    if (btnVerMas) btnVerMas.innerText = "Cargando...";
+
+    fetch(`/esp32_project/expendedora/get_report_expendedora.php?device_id=${device_id}&limit=${REPORT_LIMIT}&offset=${offset}`)
         .then(response => {
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();
@@ -100,16 +107,37 @@ function cargarReportes() {
             }
 
             if (data.reports && Array.isArray(data.reports)) {
-                const reversedReports = data.reports.reverse();
-                cargarTabla('report_table', reversedReports, ['timestamp', 'dato1', 'dato2']);
+                // No invertimos el orden (reverse) para mantener Newest -> Oldest y que la paginación tenga sentido
+                cargarTabla('report_table', data.reports, ['timestamp', 'dato1', 'dato2'], offset > 0);
+                
+                reportOffset += REPORT_LIMIT;
                 datosCargados.reportes = true; // Marcar como cargado
+
+                // Manejo del botón Ver Más
+                if (btnVerMas) {
+                    btnVerMas.innerText = "Ver más";
+                    // Si recibimos menos registros que el límite, significa que no hay más datos
+                    btnVerMas.style.display = data.reports.length < REPORT_LIMIT ? 'none' : 'inline-block';
+                    // Asignar evento si es la primera vez (aunque es mejor hacerlo una sola vez, aquí aseguramos que existe)
+                    btnVerMas.onclick = cargarMasReportes;
+                }
             } else {
                 console.warn('No se recibieron reportes válidos.');
+                if (btnVerMas) btnVerMas.style.display = 'none';
             }
         })
         .catch(error => {
             console.error("Error al obtener los datos de reportes:", error);
+            if (btnVerMas) btnVerMas.innerText = "Error al cargar";
         });
+}
+
+function cargarReportes() {
+    if (datosCargados.reportes) return; // No volver a cargar
+    
+    // Carga inicial
+    reportOffset = 0;
+    fetchReports(0);
 }
 
 function cargarCierresDiarios() {
@@ -240,7 +268,8 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
             p3: 0, 
             fichas_devolucion: 0, 
             fichas_normales: 0, 
-            fichas_promocion: 0 
+            fichas_promocion: 0,
+            fichas_cambio: 0
         };
 
         const buttonCell = document.createElement('td');
@@ -256,6 +285,7 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
         filaCierre.appendChild(createCell(cierreData.fichas_devolucion || 0));
         filaCierre.appendChild(createCell(cierreData.fichas_normales || 0));
         filaCierre.appendChild(createCell(cierreData.fichas_promocion || 0));
+        filaCierre.appendChild(createCell(cierreData.fichas_cambio || 0));
         filaCierre.appendChild(buttonCell);
 
         tablaDiariosBody.appendChild(filaCierre);
@@ -266,7 +296,7 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
         filaParciales.style.display = "none";
 
         const cellParciales = document.createElement('td');
-        cellParciales.colSpan = 10;
+        cellParciales.colSpan = 11;
 
         const containerDiv = document.createElement('div');
         containerDiv.className = 'table-container';
@@ -283,6 +313,7 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
             createHeaderCell('Fichas Devolución'), 
             createHeaderCell('Fichas Normales'), 
             createHeaderCell('Fichas Promocion'),
+            createHeaderCell('Fichas Cambio'),
             createHeaderCell('Empleado')
         ]);
 
@@ -327,6 +358,7 @@ function fusionarYRenderizarDatos(cierres, subcierres) {
                     createCell(getVal('partial_devolucion')),
                     createCell(getVal('partial_normales')),
                     createCell(getVal('partial_promocion')),
+                    createCell(getVal('partial_cambio')),
                     createCell(parcial.employee_id || parcial.empleado || '')
                 ]);
                 subTableBody.appendChild(filaParcial);
@@ -345,13 +377,13 @@ function toggleParciales(fecha) {
     }
 }
 
-function cargarTabla(idTabla, datos, columnas) {
+function cargarTabla(idTabla, datos, columnas, append = false) {
     const tbody = document.getElementById(idTabla)?.querySelector("tbody");
     if (!tbody) {
         console.warn(`Elemento con id ${idTabla} no encontrado en el DOM.`);
         return;
     }
-    tbody.innerHTML = ""; // Limpiar la tabla
+    if (!append) tbody.innerHTML = ""; // Limpiar la tabla solo si no es append
 
     console.log(`Cargando datos en la tabla ${idTabla}:`, datos);
 
