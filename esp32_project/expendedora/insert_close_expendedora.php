@@ -14,14 +14,14 @@ include '../conn/connection.php';
 $data = json_decode(file_get_contents('php://input'), true);
 
 // Verificar que se hayan recibido todos los datos necesarios
-if (!isset($data['device_id']) || !isset($data['fichas_expendidas']) || !isset($data['dinero_ingresado']) || !isset($data['promo1_contador']) || !isset($data['promo2_contador']) || !isset($data['promo3_contador'])) {
+if (!isset($data['id_expendedora']) || !isset($data['fichas_expendidas']) || !isset($data['dinero_ingresado']) || !isset($data['promo1_contador']) || !isset($data['promo2_contador']) || !isset($data['promo3_contador'])) {
     error_log("Missing data");
     echo json_encode(["error" => "Missing data"]);
     $conn->close();
     exit();
 }
 
-$id_expendedora = $data['device_id'];
+$id_expendedora = $data['id_expendedora'];
 $fichas = $data['fichas_expendidas'];
 $dinero = $data['dinero_ingresado'];
 $p1 = $data['promo1_contador'];
