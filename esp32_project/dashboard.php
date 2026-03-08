@@ -1,318 +1,187 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/style.css">
-    <title>Dashboard</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css">
+  <title>Panel de Control</title>
 </head>
 <body>
+
+<!-- ════════════════════════════════════════ NAVBAR -->
 <header>
-        <nav class="navbar">
-            <img src="img/ChatGPT Image 1 abr 2025, 21_59_11-Photoroom.png" alt="LOGO">
-            <div class="container_navbar">
-                <div class="navbar-header">
-                    <button class="navbar-toggler" data-toggle="open-navbar1">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </button>
-                    
-                </div>
-                <div class="navbar-menu" id="open-navbar1">
-                    <ul class="navbar-nav">
-                        <li class="active"><a href="dashboard.php">Home</a></li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    
-<main>
-    <div class="container">
-        <!-- Sección para las máquinas del 1 al 5 -->
-        <div class="item">
-            <h2 class="aaa">Maquina 1</h2>
-            <span id="status_maquina_1" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>PESOS:</strong> <span id="pesos_maquina_1">N/A</span></p> <br>
-                <p><strong>COIN:</strong> <span id="coin_maquina_1">N/A</span></p><br>
-                <p><strong>PREMIOS:</strong> <span id="premios_maquina_1">N/A</span></p><br>
-                <p><strong>BANCO:</strong> <span id="banco_maquina_1">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report.php?device_id=ESP32_001'">Ver Reporte</button>
-        </div>
-        <div class="item">
-            <h2 class="aaa">Maquina 2</h2>
-            <span id="status_maquina_2" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>PESOS:</strong> <span id="pesos_maquina_2">N/A</span></p><br>
-                <p><strong>COIN:</strong> <span id="coin_maquina_2">N/A</span></p><br>
-                <p><strong>PREMIOS:</strong> <span id="premios_maquina_2">N/A</span></p><br>
-                <p><strong>BANCO:</strong> <span id="banco_maquina_2">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report.php?device_id=ESP32_002'">Ver Reporte</button>
-        </div>
-        <div class="item">
-            <h2 class="aaa">Maquina 3</h2>
-            <span id="status_maquina_3" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>PESOS:</strong> <span id="pesos_maquina_3">N/A</span></p><br>
-                <p><strong>COIN:</strong> <span id="coin_maquina_3">N/A</span></p><br>
-                <p><strong>PREMIOS:</strong> <span id="premios_maquina_3">N/A</span></p><br>
-                <p><strong>BANCO:</strong> <span id="banco_maquina_3">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report.php?device_id=ESP32_003'">Ver Reporte</button>
-        </div>
-        <div class="item">
-            <h2 class="aaa">Maquina 4</h2>
-            <span id="status_maquina_4" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>PESOS:</strong> <span id="pesos_maquina_4">N/A</span></p><br>
-                <p><strong>COIN:</strong> <span id="coin_maquina_4">N/A</span></p><br>
-                <p><strong>PREMIOS:</strong> <span id="premios_maquina_4">N/A</span></p><br>
-                <p><strong>BANCO:</strong> <span id="banco_maquina_4">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report.php?device_id=ESP32_004'">Ver Reporte</button>
-        </div>
-        <div class="item">
-            <h2 class="aaa">Maquina 5</h2>
-            <span id="status_maquina_5" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>PESOS:</strong> <span id="pesos_maquina_5">N/A</span></p><br>
-                <p><strong>COIN:</strong> <span id="coin_maquina_5">N/A</span></p><br>
-                <p><strong>PREMIOS:</strong> <span id="premios_maquina_5">N/A</span></p><br>
-                <p><strong>BANCO:</strong> <span id="banco_maquina_5">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report.php?device_id=ESP32_005'">Ver Reporte</button>
-        </div>
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <img src="img/ChatGPT Image 1 abr 2025, 21_59_11-Photoroom.png" alt="Logo" id="logo">
+      <span class="brand-name">Panel de Control <span class="brand-sub">Gestión de Máquinas</span></span>
     </div>
-
-    <div class="container">
-        <!-- Sección para las máquinas del 6 al 10 -->
-        <div class="item">
-            <h2 class="aaa">Maquina 6</h2>
-            <span id="status_maquina_6" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>PESOS:</strong> <span id="pesos_maquina_6">N/A</span></p><br>
-                <p><strong>COIN:</strong> <span id="coin_maquina_6">N/A</span></p><br>
-                <p><strong>PREMIOS:</strong> <span id="premios_maquina_6">N/A</span></p><br>
-                <p><strong>BANCO:</strong> <span id="banco_maquina_6">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report.php?device_id=ESP32_006'">Ver Reporte</button>
-        </div>
-        <div class="item">
-            <h2 class="aaa">Maquina 7</h2>
-            <span id="status_maquina_7" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>PESOS:</strong> <span id="pesos_maquina_7">N/A</span></p><br>
-                <p><strong>COIN:</strong> <span id="coin_maquina_7">N/A</span></p><br>
-                <p><strong>PREMIOS:</strong> <span id="premios_maquina_7">N/A</span></p><br>
-                <p><strong>BANCO:</strong> <span id="banco_maquina_7">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report.php?device_id=ESP32_007'">Ver Reporte</button>
-        </div>
-        <div class="item">
-            <h2 class="aaa">Maquina 8</h2>
-            <span id="status_maquina_8" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>PESOS:</strong> <span id="pesos_maquina_8">N/A</span></p><br>
-                <p><strong>COIN:</strong> <span id="coin_maquina_8">N/A</span></p><br>
-                <p><strong>PREMIOS:</strong> <span id="premios_maquina_8">N/A</span></p><br>
-                <p><strong>BANCO:</strong> <span id="banco_maquina_8">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report.php?device_id=ESP32_008'">Ver Reporte</button>
-        </div>
-        <div class="item">
-            <h2 class="aaa">Maquina 9</h2>
-            <span id="status_maquina_9" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>PESOS:</strong> <span id="pesos_maquina_9">N/A</span></p><br>
-                <p><strong>COIN:</strong> <span id="coin_maquina_9">N/A</span></p><br>
-                <p><strong>PREMIOS:</strong> <span id="premios_maquina_9">N/A</span></p><br>
-                <p><strong>BANCO:</strong> <span id="banco_maquina_9">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report.php?device_id=ESP32_009'">Ver Reporte</button>
-        </div>
-        <div class="item">
-            <h2 class="aaa">Maquina 10</h2>
-            <span id="status_maquina_10" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>PESOS:</strong> <span id="pesos_maquina_10">N/A</span></p><br>
-                <p><strong>COIN:</strong> <span id="coin_maquina_10">N/A</span></p><br>
-                <p><strong>PREMIOS:</strong> <span id="premios_maquina_10">N/A</span></p><br>
-                <p><strong>BANCO:</strong> <span id="banco_maquina_10">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report.php?device_id=ESP32_010'">Ver Reporte</button>
-        </div>
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+      <button class="btn-danger-outline" id="btn-borrado-global" title="Eliminar registros de todas las máquinas">
+        🗑 Limpiar datos
+      </button>
+      <button class="navbar-toggler" id="navbar-toggler">
+        <span></span><span></span><span></span>
+      </button>
     </div>
-
-<div class="container">
-    <!-- Sección para las EXPENDEDORAS -->
-    <div class="item">
-        <h2 class="aaa">EXPENDEDORA 1</h2>
-        <span id="status_expendedora_1" class="status">Desconectado</span><br><br>
-        <div class="machine-stats">
-            <p><strong>FICHAS:</strong> <span id="fichas_expendedora_1">N/A</span></p><br>
-            <p><strong>DINERO:</strong> <span id="dinero_expendedora_1">N/A</span></p><br>
-        </div>
-        <button onclick="window.location.href='expendedora/report_expendedora.php?device_id=EXPENDEDORA_1'">Ver Reporte</button>
+    <div class="navbar-menu" id="open-navbar1">
+      <ul class="navbar-nav">
+        <li class="active"><a href="dashboard.php">Dashboard</a></li>
+      </ul>
     </div>
-    
-    <!-- Sección para otras máquinas expendedoras -->
-    <div class="item">
-        <h2 class="aaa">EXPENDEDORA 2</h2>
-        <span id="status_expendedora_2" class="status">Desconectado</span><br><br>
-        <div class="machine-stats">
-            <p><strong>FICHAS:</strong> <span id="fichas_expendedora_2">N/A</span></p><br>
-            <p><strong>DINERO:</strong> <span id="dinero_expendedora_2">N/A</span></p><br>
-        </div>
-        <button onclick="window.location.href='report_expendedora.php?device_id=EXPENDEDORA_2'">Ver Reporte</button>
-    </div>
-    
-    <div class="item">
-        <h2 class="aaa">EXPENDEDORA 3</h2>
-        <span id="status_expendedora_3" class="status">Desconectado</span><br><br>
-        <div class="machine-stats">
-            <p><strong>FICHAS:</strong> <span id="fichas_expendedora_3">N/A</span></p><br>
-            <p><strong>DINERO:</strong> <span id="dinero_expendedora_3">N/A</span></p><br>
-        </div>
-        <button onclick="window.location.href='report_expendedora.php?device_id=EXPENDEDORA_3'">Ver Reporte</button>
-    </div>
+  </nav>
+</header>
 
-    <div class="item">
-        <h2 class="aaa">EXPENDEDORA 4</h2>
-        <span id="status_expendedora_4" class="status">Desconectado</span><br><br>
-        <div class="machine-stats">
-            <p><strong>FICHAS:</strong> <span id="fichas_expendedora_4">N/A</span></p><br>
-            <p><strong>DINERO:</strong> <span id="dinero_expendedora_4">N/A</span></p><br>
-        </div>
-        <button onclick="window.location.href='report_expendedora.php?device_id=EXPENDEDORA_4'">Ver Reporte</button>
-    </div>
-    <div class="item">
-    <h2 class="aaa">EXPENDEDORA 5</h2>
-    <span id="status_expendedora_5" class="status">Desconectado</span><br><br>
-    <div class="machine-stats">
-        <p><strong>FICHAS:</strong> <span id="fichas_expendedora_5">N/A</span></p><br>
-        <p><strong>DINERO:</strong> <span id="dinero_expendedora_5">N/A</span></p><br>
-    </div>
-    <button onclick="window.location.href='report_expendedora.php?device_id=EXPENDEDORA_5'">Ver Reporte</button>
-</div>
-
-</div>
-
-    <!-- VIDEOJUEGOS -->
-
-    <div class="container">
-        <!-- Sección para la máquina de videojuegos 1 -->
-        <div class="item">
-            <h2 class="aaa">Máquina de Videojuegos 1</h2>
-            <span id="status_maquina_videojuego_1" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>COIN:</strong> <span id="coin_maquina_videojuego_1">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report_videojuegos.html?device_id=Videojuego_1'">Ver Reporte</button>
-        </div>
-
-        <!-- Sección para la máquina de videojuegos 2 -->
-        <div class="item">
-            <h2 class="aaa">Máquina de Videojuegos 2</h2>
-            <span id="status_maquina_videojuego_2" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>COIN:</strong> <span id="coin_maquina_videojuego_2">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report_videojuegos.html?device_id=Videojuego_2'">Ver Reporte</button>
-        </div>
-
-        <!-- Sección para la máquina de videojuegos 3 -->
-        <div class="item">
-            <h2 class="aaa">Máquina de Videojuegos 3</h2>
-            <span id="status_maquina_videojuego_3" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>COIN:</strong> <span id="coin_maquina_videojuego_3">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report_videojuegos.html?device_id=Videojuego_3'">Ver Reporte</button>
-        </div>
-
-        <!-- Sección para la máquina de videojuegos 4 -->
-        <div class="item">
-            <h2 class="aaa">Máquina de Videojuegos 4</h2>
-            <span id="status_maquina_videojuego_4" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>COIN:</strong> <span id="coin_maquina_videojuego_4">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report_videojuegos.html?device_id=Videojuego_4'">Ver Reporte</button>
-        </div>
-
-        <!-- Sección para la máquina de videojuegos 5 -->
-        <div class="item">
-            <h2 class="aaa">Máquina de Videojuegos 5</h2>
-            <span id="status_maquina_videojuego_5" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>COIN:</strong> <span id="coin_maquina_videojuego_5">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report_videojuegos.html?device_id=Videojuego_5'">Ver Reporte</button>
-        </div>
-    </div>
-
-    <!-- Seccion para ticketeras -->
-
-    <div class="container">
-        <div class="item">
-            <h2 class="aaa">Máquina de Tickets 1</h2>
-            <span id="status_maquina_ticket_1" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>COIN:</strong> <span id="coin_maquina_ticket_1">N/A</span></p><br>
-                <p><strong>TICKETS:</strong> <span id="ticket_maquina_ticket_1">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report_ticketera.html?device_id=Ticket_1'">Ver Reporte</button>
-        </div>
-
-
-        <div class="item">
-            <h2 class="aaa">Máquina de Tickets 2</h2>
-            <span id="status_maquina_ticket_2" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>COIN:</strong> <span id="coin_maquina_ticket_2">N/A</span></p><br>
-                <p><strong>TICKETS:</strong> <span id="ticket_maquina_ticket_2">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report_ticketera.html?device_id=Ticket_2'">Ver Reporte</button>
-        </div>
-
-        <div class="item">
-            <h2 class="aaa">Máquina de Tickets 3</h2>
-            <span id="status_maquina_ticket_3" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>COIN:</strong> <span id="coin_maquina_ticket_3">N/A</span></p><br>
-                <p><strong>TICKETS:</strong> <span id="ticket_maquina_ticket_3">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report_ticketera.html?device_id=Ticket_3'">Ver Reporte</button>
-        </div>
-
-
-        <div class="item">
-            <h2 class="aaa">Máquina de Tickets 4</h2>
-            <span id="status_maquina_ticket_4" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>COIN:</strong> <span id="coin_maquina_ticket_4">N/A</span></p><br>
-                <p><strong>TICKETS:</strong> <span id="ticket_maquina_ticket_4">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report_ticketera.html?device_id=Ticket_4'">Ver Reporte</button>
-        </div>
-
-        <div class="item">
-            <h2 class="aaa">Máquina de Tickets 5</h2>
-            <span id="status_maquina_ticket_5" class="status">Desconectado</span><br><br>
-            <div class="machine-stats">
-                <p><strong>COIN:</strong> <span id="coin_maquina_ticket_5">N/A</span></p><br>
-                <p><strong>TICKETS:</strong> <span id="ticket_maquina_ticket_5">N/A</span></p><br>
-            </div>
-            <button onclick="window.location.href='report_ticketera.html?device_id=Ticket_5'">Ver Reporte</button>
-        </div>
-    </div>
+<!-- ════════════════════════════════════════ MAIN -->
+<main id="dashboard-root">
+  <!-- Cards generadas dinámicamente por main.js -->
 </main>
-<!-- Importar el archivo main.js -->
+
+<!-- ════════════════════════════════════════ MODAL BORRADO GLOBAL -->
+<div id="global-delete-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <h2 class="modal-title" style="color:var(--red)">🗑 Limpiar datos globalmente</h2>
+      <button class="modal-close" id="global-delete-close">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <p style="font-size:.82rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1rem">
+        Elimina los registros de <strong style="color:var(--text-primary)">todas las máquinas</strong>
+        hasta la fecha que indiques. Útil para hacer limpieza periódica de datos antiguos.
+      </p>
+
+      <div class="form-group">
+        <label for="global-del-hasta">Eliminar todos los registros hasta (inclusive)</label>
+        <input type="date" id="global-del-hasta" style="width:100%;min-width:unset">
+      </div>
+
+      <div id="global-delete-preview" class="delete-preview-msg" style="margin-top:.5rem"></div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" id="global-delete-cancel">Cancelar</button>
+      <button id="btn-global-preview"  class="btn-secondary">Ver previsualización</button>
+      <button id="btn-global-confirm"  class="btn-danger" disabled>Eliminar todo</button>
+    </div>
+  </div>
+</div>
+
 <script src="script/main.js"></script>
-<script src="script/navbar.js"></script>
+<script>
+  /* ── Navbar mobile ── */
+  document.getElementById('navbar-toggler').addEventListener('click', () => {
+    document.getElementById('open-navbar1').classList.toggle('active');
+  });
+
+  /* ── Modal borrado global ── */
+  const globalModal   = document.getElementById('global-delete-modal');
+  const globalClose   = () => {
+    globalModal.style.display = 'none';
+    document.getElementById('global-del-hasta').value = '';
+    document.getElementById('global-delete-preview').textContent = '';
+    document.getElementById('btn-global-confirm').disabled = true;
+  };
+
+  document.getElementById('btn-borrado-global') .addEventListener('click', () => { globalModal.style.display = 'flex'; });
+  document.getElementById('global-delete-close').addEventListener('click', globalClose);
+  document.getElementById('global-delete-cancel').addEventListener('click', globalClose);
+  globalModal.addEventListener('click', e => { if (e.target === globalModal) globalClose(); });
+
+  document.getElementById('global-del-hasta').addEventListener('change', () => {
+    document.getElementById('btn-global-confirm').disabled = true;
+    document.getElementById('global-delete-preview').textContent = '';
+  });
+
+  /* Preview: contar cuántos registros hay hasta esa fecha */
+  document.getElementById('btn-global-preview').addEventListener('click', function () {
+    const hasta = document.getElementById('global-del-hasta').value;
+    const info  = document.getElementById('global-delete-preview');
+    if (!hasta) {
+      info.textContent = 'Seleccioná una fecha primero.';
+      info.className   = 'delete-preview-msg delete-preview-warn';
+      return;
+    }
+    this.disabled    = true;
+    this.textContent = 'Consultando…';
+    info.textContent = '';
+
+    // Contar registros de cada máquina hasta esa fecha
+    fetch(`get_all_devices.php`)
+      .then(r => r.json())
+      .then(async devData => {
+        if (!devData.devices) throw new Error('Sin datos');
+        // Fetch count for each device
+        let total = 0;
+        const proms = devData.devices.map(d =>
+          fetch(`get_report.php?device_id=${encodeURIComponent(d.device_id)}&fechaFin=${hasta}`)
+            .then(r => r.json())
+            .then(data => { total += (data.reports || []).length; })
+            .catch(() => {})
+        );
+        await Promise.all(proms);
+        if (total === 0) {
+          info.textContent = 'No hay registros hasta esa fecha.';
+          info.className   = 'delete-preview-msg delete-preview-warn';
+          document.getElementById('btn-global-confirm').disabled = true;
+        } else {
+          info.innerHTML = `⚠ Se eliminarán <strong>${total}</strong> registro${total > 1 ? 's' : ''} de todas las máquinas hasta <strong>${hasta}</strong>.`;
+          info.className = 'delete-preview-msg delete-preview-danger';
+          document.getElementById('btn-global-confirm').disabled = false;
+        }
+      })
+      .catch(err => {
+        info.textContent = 'Error: ' + err.message;
+        info.className   = 'delete-preview-msg delete-preview-warn';
+      })
+      .finally(() => {
+        this.disabled    = false;
+        this.textContent = 'Ver previsualización';
+      });
+  });
+
+  /* Confirmar borrado global */
+  document.getElementById('btn-global-confirm').addEventListener('click', function () {
+    const hasta = document.getElementById('global-del-hasta').value;
+    const info  = document.getElementById('global-delete-preview');
+    if (!hasta) return;
+
+    const ok = confirm(
+      `¿Eliminar TODOS los registros de TODAS las máquinas hasta ${hasta}?\n\nEsta acción no se puede deshacer.`
+    );
+    if (!ok) return;
+
+    this.disabled    = true;
+    this.textContent = 'Eliminando…';
+
+    fetch('delete_reports.php', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ mode: 'global', fecha_hasta: hasta })
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          info.innerHTML = `✓ ${data.message}`;
+          info.className = 'delete-preview-msg delete-preview-ok';
+          this.textContent = 'Eliminar todo';
+        } else {
+          info.textContent = 'Error: ' + (data.error || 'desconocido');
+          info.className   = 'delete-preview-msg delete-preview-warn';
+          this.disabled    = false;
+          this.textContent = 'Eliminar todo';
+        }
+      })
+      .catch(err => {
+        info.textContent = 'Error de red: ' + err.message;
+        info.className   = 'delete-preview-msg delete-preview-warn';
+        this.disabled    = false;
+        this.textContent = 'Eliminar todo';
+      });
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') globalClose();
+  });
+</script>
 </body>
 </html>

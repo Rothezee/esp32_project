@@ -93,3 +93,5 @@
 [24-Oct-2025 22:37:58 UTC] Execute failed: Cannot add or update a child row: a foreign key constraint fails (`esp32_report`.`subcierres_expendedoras`, CONSTRAINT `subcierres_expendedoras_ibfk_1` FOREIGN KEY (`cierre_expendedora_id`) REFERENCES `cierres_expendedoras` (`id_expendedora`))
 [24-Oct-2025 22:40:45 UTC] Execute failed: Cannot add or update a child row: a foreign key constraint fails (`esp32_report`.`subcierres_expendedoras`, CONSTRAINT `subcierres_expendedoras_ibfk_1` FOREIGN KEY (`cierre_expendedora_id`) REFERENCES `cierres_expendedoras` (`id_expendedora`))
 [24-Oct-2025 22:42:12 UTC] Execute failed: Cannot add or update a child row: a foreign key constraint fails (`esp32_report`.`subcierres_expendedoras`, CONSTRAINT `subcierres_expendedoras_ibfk_1` FOREIGN KEY (`cierre_expendedora_id`) REFERENCES `cierres_expendedoras` (`id_expendedora`))
+[24-Feb-2026 15:28:02 UTC] Missing data
+[24-Feb-2026 16:06:01 UTC] Missing data
